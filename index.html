@@ -104,38 +104,15 @@
     <tbody></tbody>
   </table>
 
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js";
+  <!-- Biblioteca Supabase (versão compatível com <script>) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
 
+  <script>
     const SUPABASE_URL = 'https://msctrhembaolsklvibzb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
+    const supabase = supabasejs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    window.onload = () => {
-      carregarMovimentacoes();
-    };
-
-    window.registrarMovimentacao = async function () {
-      const dados = {
-        codigo: document.getElementById('codigo').value,
-        descricao: document.getElementById('descricao').value,
-        endereco: document.getElementById('endereco').value,
-        lote: document.getElementById('lote').value,
-        quantidade: Number(document.getElementById('quantidade').value),
-        tipo: document.getElementById('tipo').value,
-        data: new Date().toISOString()
-      };
-
-      const { error } = await supabase.from('estoque').insert([dados]);
-      if (error) {
-        alert('Erro ao registrar: ' + error.message);
-      } else {
-        carregarMovimentacoes();
-      }
-    }
-
-    window.carregarMovimentacoes = async function () {
+    async function carregarMovimentacoes() {
       const { data, error } = await supabase.from('estoque').select('*').order('data', { ascending: false });
       const tbody = document.querySelector('#tabela tbody');
       tbody.innerHTML = '';
@@ -165,7 +142,26 @@
       });
     }
 
-    window.consultarProduto = async function () {
+    async function registrarMovimentacao() {
+      const dados = {
+        codigo: document.getElementById('codigo').value,
+        descricao: document.getElementById('descricao').value,
+        endereco: document.getElementById('endereco').value,
+        lote: document.getElementById('lote').value,
+        quantidade: Number(document.getElementById('quantidade').value),
+        tipo: document.getElementById('tipo').value,
+        data: new Date().toISOString()
+      };
+
+      const { error } = await supabase.from('estoque').insert([dados]);
+      if (error) {
+        alert('Erro ao registrar: ' + error.message);
+      } else {
+        carregarMovimentacoes();
+      }
+    }
+
+    async function consultarProduto() {
       const codigo = document.getElementById('consultaCodigo').value;
       const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
 
@@ -181,18 +177,25 @@
       alert(`Saldo atual do produto ${codigo}: ${total}`);
     }
 
-    window.excluirItem = async function (id) {
+    async function excluirItem(id) {
       await supabase.from('estoque').delete().eq('id', id);
       carregarMovimentacoes();
     }
 
-    window.editarItem = async function (id) {
+    async function editarItem(id) {
       const novaQtd = prompt('Digite a nova quantidade:');
       if (novaQtd !== null) {
         await supabase.from('estoque').update({ quantidade: Number(novaQtd) }).eq('id', id);
         carregarMovimentacoes();
       }
     }
+
+    window.onload = carregarMovimentacoes;
+    window.registrarMovimentacao = registrarMovimentacao;
+    window.consultarProduto = consultarProduto;
+    window.excluirItem = excluirItem;
+    window.editarItem = editarItem;
   </script>
+
 </body>
 </html>
