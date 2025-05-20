@@ -35,7 +35,8 @@
       gap: 10px;
       margin-bottom: 20px;
     }
-    .form-group input {
+    .form-group input,
+    .form-group select {
       flex: 1 1 200px;
       padding: 10px;
       border: 1px solid #d1d5db;
@@ -119,24 +120,39 @@
 
   <script>
     async function registrarMovimentacao() {
-      const dados = {
-        codigo: document.getElementById('codigo').value,
-        descricao: document.getElementById('descricao').value,
-        endereco: document.getElementById('endereco').value,
-        lote: document.getElementById('lote').value,
-        quantidade: Number(document.getElementById('quantidade').value),
-        tipo: document.getElementById('tipo').value,
-        data: new Date().toISOString()
-      };
+      const codigo = document.getElementById('codigo').value.trim();
+      const descricao = document.getElementById('descricao').value.trim();
+      const endereco = document.getElementById('endereco').value.trim();
+      const lote = document.getElementById('lote').value.trim();
+      const quantidade = Number(document.getElementById('quantidade').value);
+      const tipo = document.getElementById('tipo').value;
 
-      await supabase.from('estoque').insert([dados]);
-      carregarMovimentacoes();
+      if (!codigo || !descricao || !endereco || !lote || !quantidade || quantidade <= 0) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      const dados = { codigo, descricao, endereco, lote, quantidade, tipo, data: new Date().toISOString() };
+
+      const { error } = await supabase.from('estoque').insert([dados]);
+      if (error) {
+        alert('Erro ao registrar: ' + error.message);
+      } else {
+        carregarMovimentacoes();
+        document.querySelectorAll('input').forEach(i => i.value = '');
+      }
     }
 
     async function carregarMovimentacoes() {
       const { data, error } = await supabase.from('estoque').select('*').order('data', { ascending: false });
       const tbody = document.querySelector('#tabela tbody');
       tbody.innerHTML = '';
+
+      if (error) {
+        alert('Erro ao carregar: ' + error.message);
+        return;
+      }
+
       data.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -158,28 +174,50 @@
     }
 
     async function consultarProduto() {
-      const codigo = document.getElementById('consultaCodigo').value;
+      const codigo = document.getElementById('consultaCodigo').value.trim();
+      if (!codigo) {
+        alert('Digite um código para consultar.');
+        return;
+      }
+
       const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
-      const total = data.reduce((acc, cur) => {
-        return acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade);
-      }, 0);
+      if (error) {
+        alert('Erro na consulta: ' + error.message);
+        return;
+      }
+
+      const total = data.reduce((acc, cur) => acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade), 0);
       alert(`Saldo atual do produto ${codigo}: ${total}`);
     }
 
     async function excluirItem(id) {
-      await supabase.from('estoque').delete().eq('id', id);
-      carregarMovimentacoes();
-    }
+      if (!confirm("Deseja excluir esse item?")) return;
 
-    async function editarItem(id) {
-      const novaQtd = prompt('Digite a nova quantidade:');
-      if (novaQtd !== null) {
-        await supabase.from('estoque').update({ quantidade: Number(novaQtd) }).eq('id', id);
+      const { error } = await supabase.from('estoque').delete().eq('id', id);
+      if (error) {
+        alert('Erro ao excluir: ' + error.message);
+      } else {
         carregarMovimentacoes();
       }
     }
 
-    // Carrega ao abrir
+    async function editarItem(id) {
+      const novaQtd = prompt('Digite a nova quantidade:');
+      const qtdNum = Number(novaQtd);
+
+      if (!novaQtd || isNaN(qtdNum) || qtdNum <= 0) {
+        alert('Quantidade inválida.');
+        return;
+      }
+
+      const { error } = await supabase.from('estoque').update({ quantidade: qtdNum }).eq('id', id);
+      if (error) {
+        alert('Erro ao editar: ' + error.message);
+      } else {
+        carregarMovimentacoes();
+      }
+    }
+
     carregarMovimentacoes();
   </script>
 </body>
