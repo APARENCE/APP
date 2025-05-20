@@ -1,146 +1,181 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Estoque</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f4f6;
-      padding: 2rem;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      background-color: #2563eb;
-      color: white;
-    }
-    tr:hover {
-      background-color: #f1f5f9;
-    }
-    button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .edit-btn {
-      background-color: #10b981;
-      color: white;
-    }
-    .delete-btn {
-      background-color: #ef4444;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  <h1>Histórico de Estoque</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Código</th>
-        <th>Descrição</th>
-        <th>Endereço</th>
-        <th>Lote</th>
-        <th>Tipo</th>
-        <th>Data</th>
-        <th>Quantidade</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabela-dados">
-      <!-- Dados do Supabase aqui -->
-    </tbody>
-  </table>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto px-4 py-6">
+      <h1 class="text-3xl font-bold text-center mb-6">Sistema de Estoque</h1>
 
-  <script>
-    const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      <!-- Formulário -->
+      <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Registrar movimentação</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input id="codigo" type="number" placeholder="Código" class="border border-gray-300 rounded px-3 py-2" />
+          <input id="descricao" type="text" placeholder="Descrição" class="border border-gray-300 rounded px-3 py-2" />
+          <input id="endereco" type="text" placeholder="Endereço" class="border border-gray-300 rounded px-3 py-2" />
+          <input id="lote" type="text" placeholder="Lote" class="border border-gray-300 rounded px-3 py-2" />
+          <select id="tipo" class="border border-gray-300 rounded px-3 py-2">
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <input id="quantidade" type="number" placeholder="Quantidade" class="border border-gray-300 rounded px-3 py-2" />
+        </div>
+        <button onclick="registrarMovimentacao()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+          Registrar
+        </button>
+      </div>
 
-    async function carregarDados() {
-      const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
-      const tabela = document.getElementById('tabela-dados');
-      tabela.innerHTML = '';
+      <!-- Tabela -->
+      <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Histórico de Movimentações</h2>
+        <table class="min-w-full table-auto text-sm">
+          <thead>
+            <tr class="bg-gray-200 text-left">
+              <th class="px-4 py-2">Código</th>
+              <th class="px-4 py-2">Descrição</th>
+              <th class="px-4 py-2">Endereço</th>
+              <th class="px-4 py-2">Lote</th>
+              <th class="px-4 py-2">Tipo</th>
+              <th class="px-4 py-2">Quantidade</th>
+              <th class="px-4 py-2">Data</th>
+              <th class="px-4 py-2">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaMovimentacoes"></tbody>
+        </table>
+      </div>
+    </div>
 
-      if (error) {
-        tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
-        console.error(error);
-        return;
+    <script>
+      const supabaseUrl = "https://msctrhembaolsklvibzb.supabase.co";
+      const supabaseKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U";
+      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+      async function registrarMovimentacao() {
+        const codigo = document.getElementById("codigo").value;
+        const descricao = document.getElementById("descricao").value;
+        const endereco = document.getElementById("endereco").value;
+        const lote = document.getElementById("lote").value;
+        const tipo = document.getElementById("tipo").value;
+        const quantidade = parseInt(document.getElementById("quantidade").value);
+        const data = new Date().toISOString();
+
+        if (!codigo || !descricao || isNaN(quantidade)) {
+          alert("Preencha Código, Descrição e Quantidade corretamente.");
+          return;
+        }
+
+        const { error } = await supabase.from("estoque").insert([
+          { codigo, descricao, endereco, lote, tipo, quantidade, data },
+        ]);
+
+        if (error) {
+          alert("Erro ao registrar: " + error.message);
+        } else {
+          alert("Movimentação registrada com sucesso!");
+          limparFormulario();
+          carregarMovimentacoes();
+        }
       }
 
-      data.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${item.id}</td>
-          <td>${item.codigo}</td>
-          <td>${item.descricao}</td>
-          <td>${item.endereco}</td>
-          <td>${item.lote}</td>
-          <td>${item.tipo}</td>
-          <td>${new Date(item.data).toLocaleString()}</td>
-          <td>${item.quantidade}</td>
-          <td>
-            <button class="edit-btn" onclick="editar(${item.id})">Editar</button>
-            <button class="delete-btn" onclick="excluir(${item.id})">Excluir</button>
-          </td>
-        `;
-        tabela.appendChild(row);
-      });
-    }
-
-    async function excluir(id) {
-      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-
-      const { error } = await supabase.from('estoque').delete().eq('id', id);
-      if (error) {
-        alert('Erro ao excluir');
-        console.error(error);
-      } else {
-        alert('Registro excluído com sucesso.');
-        carregarDados();
+      function limparFormulario() {
+        ["codigo", "descricao", "endereco", "lote", "quantidade"].forEach(id => {
+          document.getElementById(id).value = "";
+        });
+        document.getElementById("tipo").value = "entrada";
       }
-    }
 
-    async function editar(id) {
-      const novoValor = prompt('Digite a nova quantidade:');
-      if (novoValor === null) return;
+      async function carregarMovimentacoes() {
+        const { data, error } = await supabase.from("estoque").select("*").order("data", { ascending: false });
+        const tabela = document.getElementById("tabelaMovimentacoes");
+        tabela.innerHTML = "";
 
-      const { error } = await supabase
-        .from('estoque')
-        .update({ quantidade: parseInt(novoValor) })
-        .eq('id', id);
+        if (error) {
+          tabela.innerHTML = `<tr><td colspan="8" class="text-red-500 px-4 py-2">Erro ao carregar dados.</td></tr>`;
+          return;
+        }
 
-      if (error) {
-        alert('Erro ao editar');
-        console.error(error);
-      } else {
-        alert('Registro atualizado.');
-        carregarDados();
+        data.forEach((item) => {
+          const row = `
+            <tr class="border-t">
+              <td class="px-4 py-2">${item.codigo}</td>
+              <td class="px-4 py-2">${item.descricao}</td>
+              <td class="px-4 py-2">${item.endereco}</td>
+              <td class="px-4 py-2">${item.lote}</td>
+              <td class="px-4 py-2">${item.tipo}</td>
+              <td class="px-4 py-2">${item.quantidade}</td>
+              <td class="px-4 py-2">${new Date(item.data).toLocaleString()}</td>
+              <td class="px-4 py-2 flex gap-2">
+                <button onclick="editarItem(${item.id})" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
+                <button onclick="excluirItem(${item.id})" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
+              </td>
+            </tr>
+          `;
+          tabela.innerHTML += row;
+        });
       }
-    }
 
-    carregarDados();
-  </script>
-</body>
+      async function excluirItem(id) {
+        if (confirm("Tem certeza que deseja excluir este item?")) {
+          const { error } = await supabase.from("estoque").delete().eq("id", id);
+          if (error) {
+            alert("Erro ao excluir: " + error.message);
+          } else {
+            carregarMovimentacoes();
+          }
+        }
+      }
+
+      async function editarItem(id) {
+        const { data, error } = await supabase.from("estoque").select("*").eq("id", id).single();
+        if (error) {
+          alert("Erro ao carregar item para edição.");
+          return;
+        }
+
+        document.getElementById("codigo").value = data.codigo;
+        document.getElementById("descricao").value = data.descricao;
+        document.getElementById("endereco").value = data.endereco;
+        document.getElementById("lote").value = data.lote;
+        document.getElementById("tipo").value = data.tipo;
+        document.getElementById("quantidade").value = data.quantidade;
+
+        document.querySelector("button[onclick='registrarMovimentacao()']").innerText = "Atualizar";
+        document.querySelector("button[onclick='registrarMovimentacao()']").onclick = function () {
+          atualizarItem(id);
+        };
+      }
+
+      async function atualizarItem(id) {
+        const codigo = document.getElementById("codigo").value;
+        const descricao = document.getElementById("descricao").value;
+        const endereco = document.getElementById("endereco").value;
+        const lote = document.getElementById("lote").value;
+        const tipo = document.getElementById("tipo").value;
+        const quantidade = parseInt(document.getElementById("quantidade").value);
+
+        const { error } = await supabase.from("estoque").update({
+          codigo, descricao, endereco, lote, tipo, quantidade
+        }).eq("id", id);
+
+        if (error) {
+          alert("Erro ao atualizar: " + error.message);
+        } else {
+          alert("Item atualizado com sucesso!");
+          document.querySelector("button[onclick*='atualizarItem']").innerText = "Registrar";
+          document.querySelector("button[onclick*='atualizarItem']").onclick = registrarMovimentacao;
+          limparFormulario();
+          carregarMovimentacoes();
+        }
+      }
+
+      carregarMovimentacoes();
+    </script>
+  </body>
 </html>
