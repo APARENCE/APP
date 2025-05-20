@@ -1,90 +1,60 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Controle de Estoque - Supabase</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle de Estoque</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    h1 {
+      background-color: #f3f4f6;
+      padding: 2rem;
       color: #333;
     }
-    form {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin: 8px 0 4px;
-    }
-    input, select {
-      width: 100%;
-      padding: 6px;
-      margin-bottom: 10px;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #218838;
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: white;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
     }
     th {
-      background-color: #4CAF50;
+      background-color: #2563eb;
       color: white;
     }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .edit-btn {
+      background-color: #10b981;
+      color: white;
+    }
+    .delete-btn {
+      background-color: #ef4444;
+      color: white;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-
-  <h1>Controle de Estoque</h1>
-
-  <form id="form">
-    <label for="codigo">Código</label>
-    <input type="text" id="codigo" required>
-
-    <label for="descricao">Descrição</label>
-    <input type="text" id="descricao" required>
-
-    <label for="endereco">Endereço</label>
-    <input type="text" id="endereco" required>
-
-    <label for="lote">Lote</label>
-    <input type="text" id="lote" required>
-
-    <label for="tipo">Tipo</label>
-    <select id="tipo" required>
-      <option value="entrada">Entrada</option>
-      <option value="saida">Saída</option>
-    </select>
-
-    <label for="quantidade">Quantidade</label>
-    <input type="number" id="quantidade" required>
-
-    <button type="submit">Lançar</button>
-  </form>
-
-  <h2>Histórico</h2>
-  <table id="tabela">
+  <h1>Histórico de Estoque</h1>
+  <table>
     <thead>
       <tr>
         <th>ID</th>
@@ -95,34 +65,33 @@
         <th>Tipo</th>
         <th>Data</th>
         <th>Quantidade</th>
+        <th>Ações</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="tabela-dados">
+      <!-- Dados do Supabase aqui -->
+    </tbody>
   </table>
 
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-    const tabela = document.querySelector('#tabela tbody');
-    const form = document.getElementById('form');
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function carregarDados() {
-      const { data, error } = await supabaseClient
-        .from('estoque')
-        .select('*')
-        .order('id', { ascending: false });
+      const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
+      const tabela = document.getElementById('tabela-dados');
+      tabela.innerHTML = '';
 
       if (error) {
-        console.error('Erro ao carregar:', error.message);
+        tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
+        console.error(error);
         return;
       }
 
-      tabela.innerHTML = '';
       data.forEach(item => {
-        const row = `<tr>
+        const row = document.createElement('tr');
+        row.innerHTML = `
           <td>${item.id}</td>
           <td>${item.codigo}</td>
           <td>${item.descricao}</td>
@@ -131,37 +100,47 @@
           <td>${item.tipo}</td>
           <td>${new Date(item.data).toLocaleString()}</td>
           <td>${item.quantidade}</td>
-        </tr>`;
-        tabela.innerHTML += row;
+          <td>
+            <button class="edit-btn" onclick="editar(${item.id})">Editar</button>
+            <button class="delete-btn" onclick="excluir(${item.id})">Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(row);
       });
     }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function excluir(id) {
+      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
 
-      const codigo = document.getElementById('codigo').value;
-      const descricao = document.getElementById('descricao').value;
-      const endereco = document.getElementById('endereco').value;
-      const lote = document.getElementById('lote').value;
-      const tipo = document.getElementById('tipo').value;
-      const quantidade = parseInt(document.getElementById('quantidade').value);
-      const data = new Date().toISOString();
-
-      const { error } = await supabaseClient.from('estoque').insert([
-        { codigo, descricao, endereco, lote, tipo, data, quantidade }
-      ]);
-
+      const { error } = await supabase.from('estoque').delete().eq('id', id);
       if (error) {
-        alert('Erro ao inserir: ' + error.message);
+        alert('Erro ao excluir');
+        console.error(error);
       } else {
-        alert('Lançamento realizado com sucesso!');
-        form.reset();
+        alert('Registro excluído com sucesso.');
         carregarDados();
       }
-    });
+    }
+
+    async function editar(id) {
+      const novoValor = prompt('Digite a nova quantidade:');
+      if (novoValor === null) return;
+
+      const { error } = await supabase
+        .from('estoque')
+        .update({ quantidade: parseInt(novoValor) })
+        .eq('id', id);
+
+      if (error) {
+        alert('Erro ao editar');
+        console.error(error);
+      } else {
+        alert('Registro atualizado.');
+        carregarDados();
+      }
+    }
 
     carregarDados();
   </script>
-
 </body>
 </html>
