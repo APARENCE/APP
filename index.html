@@ -1,158 +1,144 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Estoque</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 text-gray-800 min-h-screen p-4">
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">Controle de Estoque</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto px-4 py-6">
+      <h1 class="text-3xl font-bold text-center mb-6">Sistema de Estoque</h1>
 
-    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Registrar Movimentação</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input id="codigo" type="text" placeholder="Código do Produto" class="input" />
-        <input id="descricao" type="text" placeholder="Descrição" class="input" />
-        <input id="endereco" type="text" placeholder="Endereço" class="input" />
-        <input id="lote" type="text" placeholder="Lote" class="input" />
-        <input id="quantidade" type="number" placeholder="Quantidade" class="input" />
-        <select id="tipo" class="input">
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
+      <!-- Formulário -->
+      <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Registrar movimentação</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input
+            id="codigo"
+            type="number"
+            placeholder="Código"
+            class="border border-gray-300 rounded px-3 py-2"
+          />
+          <input
+            id="descricao"
+            type="text"
+            placeholder="Descrição"
+            class="border border-gray-300 rounded px-3 py-2"
+          />
+          <input
+            id="endereco"
+            type="text"
+            placeholder="Endereço"
+            class="border border-gray-300 rounded px-3 py-2"
+          />
+          <input
+            id="lote"
+            type="text"
+            placeholder="Lote"
+            class="border border-gray-300 rounded px-3 py-2"
+          />
+          <select
+            id="tipo"
+            class="border border-gray-300 rounded px-3 py-2"
+          >
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <input
+            id="quantidade"
+            type="number"
+            placeholder="Quantidade"
+            class="border border-gray-300 rounded px-3 py-2"
+          />
+        </div>
+        <button
+          onclick="registrarMovimentacao()"
+          class="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Registrar
+        </button>
       </div>
-      <button onclick="registrarMovimentacao()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">Registrar</button>
-    </div>
 
-    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Consultar Produto</h2>
-      <div class="flex flex-col md:flex-row gap-4">
-        <input id="consultaCodigo" type="text" placeholder="Código do Produto" class="input w-full md:w-auto" />
-        <button onclick="consultarProduto()" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg">Consultar</button>
-      </div>
-    </div>
-
-    <div class="bg-white p-6 rounded-xl shadow-md">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Histórico de Movimentações</h2>
-      <div class="overflow-auto">
-        <table class="w-full table-auto text-sm text-left border-collapse">
-          <thead class="bg-gray-200 text-gray-600">
-            <tr>
-              <th class="px-4 py-2">ID</th>
+      <!-- Tabela -->
+      <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Movimentações</h2>
+        <table class="min-w-full table-auto">
+          <thead>
+            <tr class="bg-gray-200 text-left">
               <th class="px-4 py-2">Código</th>
               <th class="px-4 py-2">Descrição</th>
               <th class="px-4 py-2">Endereço</th>
               <th class="px-4 py-2">Lote</th>
-              <th class="px-4 py-2">Quantidade</th>
               <th class="px-4 py-2">Tipo</th>
+              <th class="px-4 py-2">Quantidade</th>
               <th class="px-4 py-2">Data</th>
-              <th class="px-4 py-2">Ações</th>
             </tr>
           </thead>
-          <tbody id="tabela" class="bg-white"></tbody>
+          <tbody id="tabelaMovimentacoes"></tbody>
         </table>
       </div>
     </div>
-  </div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+    <script>
+      const supabaseUrl = "https://msctrhembaolsklvibzb.supabase.co";
+      const supabaseKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U";
+      const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
 
-  <script>
-    const SUPABASE_URL = 'https://msctrhembaolsklvibzb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
+      async function registrarMovimentacao() {
+        const codigo = document.getElementById("codigo").value;
+        const descricao = document.getElementById("descricao").value;
+        const endereco = document.getElementById("endereco").value;
+        const lote = document.getElementById("lote").value;
+        const tipo = document.getElementById("tipo").value;
+        const quantidade = parseInt(document.getElementById("quantidade").value);
+        const data = new Date().toISOString();
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { error } = await supabase.from("estoque").insert([
+          { codigo, descricao, endereco, lote, tipo, quantidade, data },
+        ]);
 
-    async function carregarMovimentacoes() {
-      const { data, error } = await supabase.from('estoque').select('*').order('data', { ascending: false });
-      const tabela = document.getElementById('tabela');
-      tabela.innerHTML = '';
-
-      if (error) {
-        alert('Erro ao carregar: ' + error.message);
-        return;
+        if (error) {
+          alert("Erro ao registrar: " + error.message);
+        } else {
+          alert("Movimentação registrada com sucesso!");
+          carregarMovimentacoes();
+        }
       }
 
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b hover:bg-gray-100';
-        tr.innerHTML = `
-          <td class="px-4 py-2">${item.id}</td>
-          <td class="px-4 py-2">${item.codigo}</td>
-          <td class="px-4 py-2">${item.descricao}</td>
-          <td class="px-4 py-2">${item.endereco}</td>
-          <td class="px-4 py-2">${item.lote}</td>
-          <td class="px-4 py-2">${item.quantidade}</td>
-          <td class="px-4 py-2">${item.tipo}</td>
-          <td class="px-4 py-2">${new Date(item.data).toLocaleString()}</td>
-          <td class="px-4 py-2 flex flex-wrap gap-2">
-            <button onclick="editarItem(${item.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">Editar</button>
-            <button onclick="excluirItem(${item.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Excluir</button>
-          </td>
-        `;
-        tabela.appendChild(tr);
-      });
-    }
+      async function carregarMovimentacoes() {
+        const { data, error } = await supabase
+          .from("estoque")
+          .select("*")
+          .order("data", { ascending: false });
 
-    async function registrarMovimentacao() {
-      const dados = {
-        codigo: document.getElementById('codigo').value,
-        descricao: document.getElementById('descricao').value,
-        endereco: document.getElementById('endereco').value,
-        lote: document.getElementById('lote').value,
-        quantidade: Number(document.getElementById('quantidade').value),
-        tipo: document.getElementById('tipo').value,
-        data: new Date().toISOString()
-      };
+        const tabela = document.getElementById("tabelaMovimentacoes");
+        tabela.innerHTML = "";
 
-      const { error } = await supabase.from('estoque').insert([dados]);
-      if (error) {
-        alert('Erro ao registrar: ' + error.message);
-      } else {
-        carregarMovimentacoes();
-      }
-    }
+        if (error) {
+          tabela.innerHTML = `<tr><td colspan="7" class="text-red-500 px-4 py-2">Erro ao carregar dados.</td></tr>`;
+          return;
+        }
 
-    async function consultarProduto() {
-      const codigo = document.getElementById('consultaCodigo').value;
-      const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
-
-      if (error) {
-        alert('Erro ao consultar: ' + error.message);
-        return;
+        data.forEach((item) => {
+          const row = `
+            <tr class="border-t">
+              <td class="px-4 py-2">${item.codigo}</td>
+              <td class="px-4 py-2">${item.descricao}</td>
+              <td class="px-4 py-2">${item.endereco}</td>
+              <td class="px-4 py-2">${item.lote}</td>
+              <td class="px-4 py-2">${item.tipo}</td>
+              <td class="px-4 py-2">${item.quantidade}</td>
+              <td class="px-4 py-2">${new Date(item.data).toLocaleString()}</td>
+            </tr>
+          `;
+          tabela.innerHTML += row;
+        });
       }
 
-      const total = data.reduce((acc, cur) => acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade), 0);
-      alert(`Saldo atual do produto ${codigo}: ${total}`);
-    }
-
-    async function excluirItem(id) {
-      await supabase.from('estoque').delete().eq('id', id);
       carregarMovimentacoes();
-    }
-
-    async function editarItem(id) {
-      const novaQtd = prompt('Digite a nova quantidade:');
-      if (novaQtd !== null) {
-        await supabase.from('estoque').update({ quantidade: Number(novaQtd) }).eq('id', id);
-        carregarMovimentacoes();
-      }
-    }
-
-    window.onload = carregarMovimentacoes;
-    window.registrarMovimentacao = registrarMovimentacao;
-    window.consultarProduto = consultarProduto;
-    window.excluirItem = excluirItem;
-    window.editarItem = editarItem;
-  </script>
-
-  <style>
-    .input {
-      @apply border border-gray-300 rounded-lg px-4 py-2 w-full;
-    }
-  </style>
-</body>
+    </script>
+  </body>
 </html>
