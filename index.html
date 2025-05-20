@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Controle de Estoque - Consulta Profissional</title>
+  <title>Controle de Estoque - Histórico e Saldo</title>
 
   <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f7f9fb;
@@ -14,25 +19,30 @@
     }
 
     .container {
-      max-width: 900px;
+      max-width: 1100px;
       margin: auto;
       background: white;
-      padding: 30px;
+      padding: 30px 40px;
       border-radius: 12px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
     }
 
     h1 {
+      width: 100%;
       font-weight: 600;
       font-size: 2.4rem;
       margin-bottom: 30px;
       color: #0f4c81;
     }
 
+    /* Form para filtrar o produto */
     .form-group {
+      width: 100%;
       display: flex;
       gap: 12px;
-      align-items: center;
       margin-bottom: 30px;
     }
 
@@ -69,103 +79,248 @@
       box-shadow: 0 6px 12px rgba(9, 51, 84, 0.5);
     }
 
-    /* Card resultado da consulta */
-    #resultadoConsulta {
+    /* Layout principal: tabela + saldo */
+    .main-content {
+      display: flex;
+      width: 100%;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    /* Tabela estilo SAP clean */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 4px 14px rgb(15 76 129 / 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #0f4c81;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    thead tr th {
+      padding: 14px 18px;
+      text-align: left;
+      user-select: none;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #cfd8dc;
+      transition: background-color 0.25s;
+      cursor: default;
+    }
+
+    tbody tr:hover {
+      background-color: #e8f1f8;
+    }
+
+    tbody tr td {
+      padding: 14px 18px;
+      font-size: 1rem;
+      color: #222;
+    }
+
+    tbody tr td.tipo-entrada {
+      color: #2e7d32; /* verde */
+      font-weight: 700;
+    }
+
+    tbody tr td.tipo-saida {
+      color: #c62828; /* vermelho */
+      font-weight: 700;
+    }
+
+    /* Card do saldo ao lado */
+    .saldo-card {
       background: #f0f4f7;
       border-left: 6px solid #0f4c81;
-      padding: 24px 30px;
-      border-radius: 8px;
+      padding: 30px 40px;
+      border-radius: 10px;
+      min-width: 280px;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: inset 0 0 15px #a0b9d1;
+      user-select: none;
+      transition: background-color 0.4s ease;
       font-size: 1.3rem;
       font-weight: 600;
       color: #0f4c81;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      box-shadow: inset 0 0 10px #a0b9d1;
-      user-select: none;
-      transition: background-color 0.4s ease;
+      text-align: center;
     }
 
-    #resultadoConsulta.erro {
-      color: #b00020;
-      border-left-color: #b00020;
-      background: #fdecea;
-      box-shadow: inset 0 0 10px #f9c5c0;
+    .saldo-card span.icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
     }
 
-    #resultadoConsulta.saldo-positivo {
+    .saldo-card.saldo-positivo {
       color: #1b5e20;
       border-left-color: #4caf50;
       background: #e8f5e9;
-      box-shadow: inset 0 0 10px #a5d6a7;
+      box-shadow: inset 0 0 15px #a5d6a7;
     }
 
-    #resultadoConsulta.saldo-negativo {
+    .saldo-card.saldo-negativo {
       color: #b00020;
       border-left-color: #d32f2f;
       background: #ffebee;
-      box-shadow: inset 0 0 10px #ef9a9a;
+      box-shadow: inset 0 0 15px #ef9a9a;
+    }
+
+    .saldo-card.saldo-zero {
+      color: #0f4c81;
+      border-left-color: #0f4c81;
+      background: #f0f4f7;
+      box-shadow: inset 0 0 15px #a0b9d1;
+    }
+
+    /* Mensagens de erro */
+    #msgErro {
+      width: 100%;
+      margin-top: -20px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      color: #b00020;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* Responsivo */
+    @media (max-width: 850px) {
+      .container {
+        padding: 20px;
+      }
+      .main-content {
+        flex-direction: column;
+        align-items: center;
+      }
+      table {
+        max-width: 100%;
+      }
+      .saldo-card {
+        max-width: 100%;
+        width: 100%;
+        margin-top: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Consulta de Saldo do Produto</h1>
+    <h1>Histórico e Saldo do Produto</h1>
 
     <div class="form-group">
-      <input type="text" id="consultaCodigo" placeholder="Digite o código do produto..." aria-label="Código do produto" />
-      <button onclick="consultarProduto()">Consultar</button>
+      <input type="text" id="inputCodigo" placeholder="Digite o código do produto..." aria-label="Código do produto" />
+      <button onclick="consultar()">Consultar</button>
     </div>
 
-    <div id="resultadoConsulta" aria-live="polite" role="status"></div>
+    <div id="msgErro" role="alert" aria-live="assertive"></div>
+
+    <div class="main-content">
+      <table aria-label="Histórico de movimentações">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Quantidade</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaCorpo">
+          <!-- linhas dinâmicas aqui -->
+        </tbody>
+      </table>
+
+      <div id="saldoCard" class="saldo-card saldo-zero" aria-live="polite" role="region" aria-label="Saldo atual do produto">
+        <span class="icon">&#x1F4C8;</span>
+        Saldo atual: 0
+      </div>
+    </div>
   </div>
 
   <script>
-    // Simulação dados locais para teste — no real, use seu backend
+    // Exemplo de dados para teste
     const movimentacoes = [
-      { codigo: 'ABC123', tipo: 'entrada', quantidade: 50 },
-      { codigo: 'ABC123', tipo: 'saida', quantidade: 20 },
-      { codigo: 'XYZ789', tipo: 'entrada', quantidade: 100 },
-      { codigo: 'XYZ789', tipo: 'saida', quantidade: 30 }
+      { codigo: 'ABC123', tipo: 'entrada', quantidade: 50, data: '2025-05-18' },
+      { codigo: 'ABC123', tipo: 'saida', quantidade: 20, data: '2025-05-19' },
+      { codigo: 'ABC123', tipo: 'entrada', quantidade: 30, data: '2025-05-20' },
+      { codigo: 'XYZ789', tipo: 'entrada', quantidade: 100, data: '2025-05-18' },
+      { codigo: 'XYZ789', tipo: 'saida', quantidade: 30, data: '2025-05-19' }
     ];
 
-    function consultarProduto() {
-      const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
-      const resultado = document.getElementById('resultadoConsulta');
-      resultado.textContent = '';
-      resultado.className = '';
+    function consultar() {
+      const codigo = document.getElementById('inputCodigo').value.trim();
+      const tabelaCorpo = document.getElementById('tabelaCorpo');
+      const saldoCard = document.getElementById('saldoCard');
+      const msgErro = document.getElementById('msgErro');
 
-      if (codigoConsulta === '') {
-        resultado.textContent = 'Por favor, digite o código do produto para consultar.';
-        resultado.classList.add('erro');
+      // Reset
+      tabelaCorpo.innerHTML = '';
+      saldoCard.className = 'saldo-card saldo-zero';
+      saldoCard.innerHTML = `<span class="icon">&#x1F4C8;</span>Saldo atual: 0`;
+      msgErro.textContent = '';
+
+      if (codigo === '') {
+        msgErro.textContent = 'Por favor, digite o código do produto.';
         return;
       }
 
-      // Filtrar movimentações por código (case insensitive)
-      const movs = movimentacoes.filter(mov => mov.codigo.toLowerCase() === codigoConsulta.toLowerCase());
+      // Filtra movimentações
+      const movs = movimentacoes.filter(m => m.codigo.toLowerCase() === codigo.toLowerCase());
 
       if (movs.length === 0) {
-        resultado.textContent = `Nenhuma movimentação encontrada para o código "${codigoConsulta}".`;
-        resultado.classList.add('erro');
+        msgErro.textContent = `Nenhuma movimentação encontrada para o código "${codigo}".`;
         return;
       }
 
-      // Calcular saldo
-      let saldo = 0;
+      // Ordenar por data crescente
+      movs.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+      // Preenche tabela
       movs.forEach(mov => {
-        saldo += mov.tipo === 'entrada' ? mov.quantidade : -mov.quantidade;
+        const tr = document.createElement('tr');
+
+        const tdData = document.createElement('td');
+        tdData.textContent = new Date(mov.data).toLocaleDateString('pt-BR');
+        tr.appendChild(tdData);
+
+        const tdTipo = document.createElement('td');
+        tdTipo.textContent = mov.tipo.charAt(0).toUpperCase() + mov.tipo.slice(1);
+        tdTipo.className = mov.tipo === 'entrada' ? 'tipo-entrada' : 'tipo-saida';
+        tr.appendChild(tdTipo);
+
+        const tdQtd = document.createElement('td');
+        tdQtd.textContent = mov.quantidade;
+        tr.appendChild(tdQtd);
+
+        tabelaCorpo.appendChild(tr);
       });
 
-      // Mostrar resultado com estilo e ícone
+      // Calcula saldo
+      let saldo = 0;
+      movs.forEach(m => {
+        saldo += m.tipo === 'entrada' ? m.quantidade : -m.quantidade;
+      });
+
+      // Atualiza card do saldo com estilo
       if (saldo > 0) {
-        resultado.classList.add('saldo-positivo');
-        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <span style="font-size:1.8rem;">&#9989;</span> <strong>${saldo}</strong>`;
+        saldoCard.className = 'saldo-card saldo-positivo';
+        saldoCard.innerHTML = `<span class="icon">&#9989;</span>Saldo atual: <strong>${saldo}</strong>`;
       } else if (saldo < 0) {
-        resultado.classList.add('saldo-negativo');
-        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <span style="font-size:1.8rem;">&#10060;</span> <strong>${saldo}</strong>`;
+        saldoCard.className = 'saldo-card saldo-negativo';
+        saldoCard.innerHTML = `<span class="icon">&#10060;</span>Saldo atual: <strong>${saldo}</strong>`;
       } else {
-        resultado.classList.add('saldo-positivo');
-        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <strong>${saldo}</strong> (saldo zerado)`;
+        saldoCard.className = 'saldo-card saldo-zero';
+        saldoCard.innerHTML = `<span class="icon">&#x1F4C8;</span>Saldo atual: <strong>${saldo}</strong> (zerado)`;
       }
     }
   </script>
