@@ -2,206 +2,429 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controle de Estoque</title>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-    const SUPABASE_URL = 'https://msctrhembaolsklvibzb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    window.supabase = supabase; // torna disponível no escopo global
-
-    window.onload = () => {
-      carregarMovimentacoes();
-    };
-
-    window.registrarMovimentacao = async () => {
-      const dados = {
-        codigo: document.getElementById('codigo').value,
-        descricao: document.getElementById('descricao').value,
-        endereco: document.getElementById('endereco').value,
-        lote: document.getElementById('lote').value,
-        quantidade: Number(document.getElementById('quantidade').value),
-        tipo: document.getElementById('tipo').value,
-        data: new Date().toISOString()
-      };
-
-      const { error } = await supabase.from('estoque').insert([dados]);
-      if (error) {
-        alert('Erro ao registrar: ' + error.message);
-      } else {
-        carregarMovimentacoes();
-      }
-    };
-
-    window.carregarMovimentacoes = async () => {
-      const { data, error } = await supabase.from('estoque').select('*').order('data', { ascending: false });
-      const tbody = document.querySelector('#tabela tbody');
-      tbody.innerHTML = '';
-
-      if (error) {
-        alert('Erro ao carregar: ' + error.message);
-        return;
-      }
-
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.id}</td>
-          <td>${item.codigo}</td>
-          <td>${item.descricao}</td>
-          <td>${item.endereco}</td>
-          <td>${item.lote}</td>
-          <td>${item.quantidade}</td>
-          <td>${item.tipo}</td>
-          <td>${new Date(item.data).toLocaleString()}</td>
-          <td class="actions">
-            <button onclick="editarItem(${item.id})">Editar</button>
-            <button class="delete" onclick="excluirItem(${item.id})">Excluir</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    };
-
-    window.consultarProduto = async () => {
-      const codigo = document.getElementById('consultaCodigo').value;
-      const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
-
-      if (error) {
-        alert('Erro ao consultar: ' + error.message);
-        return;
-      }
-
-      const total = data.reduce((acc, cur) => {
-        return acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade);
-      }, 0);
-
-      alert(`Saldo atual do produto ${codigo}: ${total}`);
-    };
-
-    window.excluirItem = async (id) => {
-      await supabase.from('estoque').delete().eq('id', id);
-      carregarMovimentacoes();
-    };
-
-    window.editarItem = async (id) => {
-      const novaQtd = prompt('Digite a nova quantidade:');
-      if (novaQtd !== null) {
-        await supabase.from('estoque').update({ quantidade: Number(novaQtd) }).eq('id', id);
-        carregarMovimentacoes();
-      }
-    };
-  </script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Controle de Estoque</title>
   <style>
+    /* RESET e básico */
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f3f4f6;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f7f9fc;
       margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #111827;
-    }
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    }
-    .form-group {
+      padding: 0;
+      color: #333;
+      min-height: 100vh;
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
     }
-    .form-group input, .form-group select {
-      flex: 1 1 200px;
-      padding: 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+    h1, h2 {
+      color: #222;
     }
-    button {
-      padding: 10px 20px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #1d4ed8;
-    }
-    table {
+
+    /* Container */
+    .container {
+      max-width: 960px;
       width: 100%;
+      background: white;
+      padding: 20px 30px 40px 30px;
+      border-radius: 10px;
+      box-shadow: 0 6px 15px rgb(0 0 0 / 0.1);
+    }
+
+    /* Formulário e inputs */
+    .form-group {
+      margin-bottom: 15px;
+      max-width: 400px;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #1976d2;
+      box-shadow: 0 0 8px #1976d2aa;
+    }
+
+    /* Botões */
+    button {
+      background-color: #1976d2;
+      color: white;
+      padding: 12px 25px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover,
+    button:focus {
+      background-color: #0f4a8c;
+      outline: none;
+    }
+    button:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+
+    /* Mensagem de resultado */
+    #mensagem {
+      margin-top: 15px;
+      font-weight: 600;
+      min-height: 24px;
+    }
+    #mensagem.sucesso {
+      color: #2e7d32;
+    }
+    #mensagem.erro {
+      color: #d32f2f;
+    }
+
+    /* Consulta de saldo */
+    #resultadoConsulta {
+      margin-top: 15px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      max-width: 350px;
+    }
+    #resultadoConsulta.saldo-positivo {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border: 1.5px solid #2e7d32;
+    }
+    #resultadoConsulta.saldo-negativo {
+      background-color: #ffebee;
+      color: #c62828;
+      border: 1.5px solid #c62828;
+    }
+
+    /* Tabela */
+    table {
       border-collapse: collapse;
-      margin-top: 20px;
+      width: 100%;
+      margin-top: 30px;
+      font-size: 0.95rem;
+    }
+    thead {
+      background-color: #1976d2;
+      color: white;
     }
     th, td {
-      border: 1px solid #e5e7eb;
-      padding: 10px;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
       text-align: center;
     }
-    th {
-      background-color: #f9fafb;
+    tbody tr:hover {
+      background-color: #f1f5fb;
     }
-    .actions button {
-      margin: 0 5px;
-      background-color: #f59e0b;
+
+    /* Cores tipo movimentação */
+    .tipo-entrada {
+      color: #2e7d32; /* verde */
+      font-weight: 700;
     }
-    .actions button.delete {
-      background-color: #ef4444;
+    .tipo-saida {
+      color: #c62828; /* vermelho */
+      font-weight: 700;
     }
-    .actions button:hover {
-      opacity: 0.9;
+
+    /* Responsivo */
+    @media (max-width: 720px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        padding: 15px 20px 30px 20px;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tbody tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      tbody td {
+        border: none;
+        padding: 8px 10px;
+        text-align: right;
+        position: relative;
+      }
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        top: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: #555;
+      }
+      #resultadoConsulta {
+        max-width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Controle de Estoque</h1>
+  <div class="container" role="main" aria-labelledby="tituloSistema">
+    <h1 id="tituloSistema">Controle de Estoque</h1>
 
-    <div class="form-group">
-      <input type="text" id="codigo" placeholder="Código do Produto" />
-      <input type="text" id="descricao" placeholder="Descrição do Produto" />
-      <input type="text" id="endereco" placeholder="Endereço" />
-      <input type="text" id="lote" placeholder="Lote" />
-      <input type="number" id="quantidade" placeholder="Quantidade" />
-      <select id="tipo">
-        <option value="entrada">Entrada</option>
-        <option value="saida">Saída</option>
-      </select>
-      <button onclick="registrarMovimentacao()">Registrar</button>
-    </div>
+    <!-- Formulário de cadastro -->
+    <section aria-labelledby="tituloCadastro">
+      <h2 id="tituloCadastro">Cadastrar movimentação</h2>
+      <form id="formMovimentacao" aria-describedby="mensagem">
+        <div class="form-group">
+          <label for="codigo">Código do produto</label>
+          <input type="text" id="codigo" name="codigo" placeholder="Ex: PROD123" required />
+        </div>
+        <div class="form-group">
+          <label for="descricao">Descrição</label>
+          <input type="text" id="descricao" name="descricao" placeholder="Ex: Produto Exemplo" required />
+        </div>
+        <div class="form-group">
+          <label for="endereco">Endereço</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Ex: A1-23" required />
+        </div>
+        <div class="form-group">
+          <label for="lote">Lote</label>
+          <input type="text" id="lote" name="lote" placeholder="Ex: Lote 45" required />
+        </div>
+        <div class="form-group">
+          <label for="quantidade">Quantidade</label>
+          <input type="number" id="quantidade" name="quantidade" min="1" step="1" required />
+        </div>
+        <div class="form-group">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Selecione</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="data">Data</label>
+          <input type="date" id="data" name="data" required />
+        </div>
+        <button type="submit" aria-label="Registrar movimentação">Registrar</button>
+      </form>
+      <div id="mensagem" role="alert" aria-live="polite"></div>
+    </section>
 
-    <div class="form-group">
-      <input type="text" id="consultaCodigo" placeholder="Consultar Código do Produto" />
-      <button onclick="consultarProduto()">Consultar</button>
-    </div>
+    <!-- Consulta saldo -->
+    <section aria-labelledby="tituloConsulta" style="margin-top: 40px;">
+      <h2 id="tituloConsulta">Consultar saldo do produto</h2>
+      <div class="form-group" style="max-width: 350px;">
+        <input type="text" id="consultaCodigo" placeholder="Digite o código para consultar" aria-label="Código para consulta" />
+        <button onclick="consultarProduto()" aria-label="Consultar produto">Consultar</button>
+      </div>
+      <div id="resultadoConsulta" role="alert" aria-live="polite"></div>
+    </section>
 
-    <h2>Histórico de Movimentações</h2>
-    <table id="tabela">
-      <thead>
+    <!-- Tabela de movimentações -->
+    <section aria-labelledby="tituloTabela" style="margin-top: 40px;">
+      <h2 id="tituloTabela" class="sr-only">Movimentações cadastradas</h2>
+      <table id="tabela" role="table" aria-describedby="descricaoTabela" aria-live="polite">
+        <caption id="descricaoTabela" class="sr-only">Lista de movimentações de estoque</caption>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Código</th>
+            <th scope="col">Descrição</th>
+            <th scope="col">Endereço</th>
+            <th scope="col">Lote</th>
+            <th scope="col">Quantidade</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Data</th>
+            <th scope="col">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="9" style="text-align:center; padding:20px;">Carregando dados...</td></tr>
+        </tbody>
+      </table>
+    </section>
+<script>
+  // Simulação de banco de dados local (array)
+  // No uso real, você integraria com backend/Google Sheets/NocoDB etc.
+  let movimentacoes = [];
+  let contadorId = 1;
+
+  const form = document.getElementById('formMovimentacao');
+  const mensagem = document.getElementById('mensagem');
+  const tabelaCorpo = document.querySelector('#tabela tbody');
+  const resultadoConsulta = document.getElementById('resultadoConsulta');
+
+  // Função para limpar mensagem
+  function limparMensagem() {
+    mensagem.textContent = '';
+    mensagem.className = '';
+  }
+
+  // Função para limpar form
+  function limparFormulario() {
+    form.reset();
+  }
+
+  // Função para renderizar tabela
+  function renderizarTabela() {
+    if (movimentacoes.length === 0) {
+      tabelaCorpo.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhuma movimentação cadastrada.</td></tr>`;
+      return;
+    }
+    tabelaCorpo.innerHTML = movimentacoes
+      .map(mov => `
         <tr>
-          <th>ID</th>
-          <th>Código</th>
-          <th>Descrição</th>
-          <th>Endereço</th>
-          <th>Lote</th>
-          <th>Quantidade</th>
-          <th>Tipo</th>
-          <th>Data</th>
-          <th>Ações</th>
+          <td data-label="ID">${mov.id}</td>
+          <td data-label="Código">${mov.codigo}</td>
+          <td data-label="Descrição">${mov.descricao}</td>
+          <td data-label="Endereço">${mov.endereco}</td>
+          <td data-label="Lote">${mov.lote}</td>
+          <td data-label="Quantidade">${mov.quantidade}</td>
+          <td data-label="Tipo" class="tipo-${mov.tipo}">${mov.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
+          <td data-label="Data">${mov.data}</td>
+          <td data-label="Ações">
+            <button aria-label="Excluir movimentação ${mov.id}" onclick="excluirMovimentacao(${mov.id})" style="background:#c62828; padding:6px 12px; border-radius:5px; font-size:0.9rem;">Excluir</button>
+          </td>
         </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+      `)
+      .join('');
+  }
+
+  // Função para validar código
+  function validarCodigo(codigo) {
+    return codigo.trim().length > 0;
+  }
+
+  // Função para cadastrar movimentação
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    limparMensagem();
+
+    // Capturar dados
+    const codigo = form.codigo.value.trim();
+    const descricao = form.descricao.value.trim();
+    const endereco = form.endereco.value.trim();
+    const lote = form.lote.value.trim();
+    const quantidade = Number(form.quantidade.value);
+    const tipo = form.tipo.value;
+    const data = form.data.value;
+
+    // Validações simples
+    if (!validarCodigo(codigo)) {
+      mensagem.textContent = 'Código do produto inválido.';
+      mensagem.className = 'erro';
+      return;
+    }
+    if (!descricao || !endereco || !lote || quantidade <= 0 || !tipo || !data) {
+      mensagem.textContent = 'Por favor, preencha todos os campos corretamente.';
+      mensagem.className = 'erro';
+      return;
+    }
+
+    // Criar objeto movimentação
+    const novaMovimentacao = {
+      id: contadorId++,
+      codigo,
+      descricao,
+      endereco,
+      lote,
+      quantidade,
+      tipo,
+      data
+    };
+
+    // Adicionar na lista
+    movimentacoes.push(novaMovimentacao);
+
+    // Atualizar tabela
+    renderizarTabela();
+
+    // Limpar form e mensagem sucesso
+    limparFormulario();
+    mensagem.textContent = 'Movimentação cadastrada com sucesso!';
+    mensagem.className = 'sucesso';
+
+    // Limpar resultado de consulta
+    resultadoConsulta.textContent = '';
+    resultadoConsulta.className = '';
+  });
+
+  // Função para excluir movimentação
+  function excluirMovimentacao(id) {
+    const confirmacao = confirm(`Deseja realmente excluir a movimentação de ID ${id}?`);
+    if (!confirmacao) return;
+
+    movimentacoes = movimentacoes.filter(mov => mov.id !== id);
+    renderizarTabela();
+
+    mensagem.textContent = `Movimentação ${id} excluída com sucesso.`;
+    mensagem.className = 'sucesso';
+
+    // Limpar resultado de consulta
+    resultadoConsulta.textContent = '';
+    resultadoConsulta.className = '';
+  }
+
+  // Função para consultar saldo do produto pelo código
+  function consultarProduto() {
+    const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
+    resultadoConsulta.textContent = '';
+    resultadoConsulta.className = '';
+
+    if (codigoConsulta === '') {
+      resultadoConsulta.textContent = 'Digite o código do produto para consultar.';
+      resultadoConsulta.className = 'erro';
+      return;
+    }
+
+    // Filtrar movimentações do código informado
+    const movsDoProduto = movimentacoes.filter(mov => mov.codigo.toLowerCase() === codigoConsulta.toLowerCase());
+
+    if (movsDoProduto.length === 0) {
+      resultadoConsulta.textContent = `Nenhuma movimentação encontrada para o código "${codigoConsulta}".`;
+      resultadoConsulta.className = 'erro';
+      return;
+    }
+
+    // Calcular saldo
+    let saldo = 0;
+    movsDoProduto.forEach(mov => {
+      if (mov.tipo === 'entrada') saldo += mov.quantidade;
+      else saldo -= mov.quantidade;
+    });
+
+    // Mostrar resultado com estilo
+    resultadoConsulta.textContent = `Saldo atual do produto "${codigoConsulta}": ${saldo}`;
+    if (saldo >= 0) {
+      resultadoConsulta.className = 'saldo-positivo';
+    } else {
+      resultadoConsulta.className = 'saldo-negativo';
+    }
+  }
+
+  // Inicializar tabela vazia no carregamento
+  renderizarTabela();
+</script>
 </body>
 </html>
