@@ -85,7 +85,7 @@
       const supabaseUrl = "https://msctrhembaolsklvibzb.supabase.co";
       const supabaseKey =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U";
-      const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
       async function registrarMovimentacao() {
         const codigo = document.getElementById("codigo").value;
@@ -96,6 +96,12 @@
         const quantidade = parseInt(document.getElementById("quantidade").value);
         const data = new Date().toISOString();
 
+        // Validar campos mínimos
+        if (!codigo || !descricao || !quantidade) {
+          alert("Preencha Código, Descrição e Quantidade.");
+          return;
+        }
+
         const { error } = await supabase.from("estoque").insert([
           { codigo, descricao, endereco, lote, tipo, quantidade, data },
         ]);
@@ -104,6 +110,13 @@
           alert("Erro ao registrar: " + error.message);
         } else {
           alert("Movimentação registrada com sucesso!");
+          // Limpar campos após registrar
+          document.getElementById("codigo").value = "";
+          document.getElementById("descricao").value = "";
+          document.getElementById("endereco").value = "";
+          document.getElementById("lote").value = "";
+          document.getElementById("tipo").value = "entrada";
+          document.getElementById("quantidade").value = "";
           carregarMovimentacoes();
         }
       }
