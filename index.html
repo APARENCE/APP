@@ -4,80 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Controle de Estoque</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f7f7f7;
-    }
-    h1 {
-      text-align: center;
-    }
-    .form-group {
-      margin: 20px 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    input, select, button {
-      padding: 10px;
-      font-size: 14px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: left;
-    }
-    .actions button {
-      margin-right: 5px;
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Controle de Estoque</h1>
+<body class="bg-gray-100 text-gray-800 min-h-screen p-4">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">Controle de Estoque</h1>
 
-  <div class="form-group">
-    <input type="text" id="codigo" placeholder="Código do Produto" />
-    <input type="text" id="descricao" placeholder="Descrição do Produto" />
-    <input type="text" id="endereco" placeholder="Endereço" />
-    <input type="text" id="lote" placeholder="Lote" />
-    <input type="number" id="quantidade" placeholder="Quantidade" />
-    <select id="tipo">
-      <option value="entrada">Entrada</option>
-      <option value="saida">Saída</option>
-    </select>
-    <button onclick="registrarMovimentacao()">Registrar</button>
+    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Registrar Movimentação</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input id="codigo" type="text" placeholder="Código do Produto" class="input" />
+        <input id="descricao" type="text" placeholder="Descrição" class="input" />
+        <input id="endereco" type="text" placeholder="Endereço" class="input" />
+        <input id="lote" type="text" placeholder="Lote" class="input" />
+        <input id="quantidade" type="number" placeholder="Quantidade" class="input" />
+        <select id="tipo" class="input">
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+      <button onclick="registrarMovimentacao()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg">Registrar</button>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Consultar Produto</h2>
+      <div class="flex flex-col md:flex-row gap-4">
+        <input id="consultaCodigo" type="text" placeholder="Código do Produto" class="input w-full md:w-auto" />
+        <button onclick="consultarProduto()" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg">Consultar</button>
+      </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-md">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">Histórico de Movimentações</h2>
+      <div class="overflow-auto">
+        <table class="w-full table-auto text-sm text-left border-collapse">
+          <thead class="bg-gray-200 text-gray-600">
+            <tr>
+              <th class="px-4 py-2">ID</th>
+              <th class="px-4 py-2">Código</th>
+              <th class="px-4 py-2">Descrição</th>
+              <th class="px-4 py-2">Endereço</th>
+              <th class="px-4 py-2">Lote</th>
+              <th class="px-4 py-2">Quantidade</th>
+              <th class="px-4 py-2">Tipo</th>
+              <th class="px-4 py-2">Data</th>
+              <th class="px-4 py-2">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela" class="bg-white"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <input type="text" id="consultaCodigo" placeholder="Consultar Código do Produto" />
-    <button onclick="consultarProduto()">Consultar</button>
-  </div>
-
-  <h2>Histórico de Movimentações</h2>
-  <table id="tabela">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Código</th>
-        <th>Descrição</th>
-        <th>Endereço</th>
-        <th>Lote</th>
-        <th>Quantidade</th>
-        <th>Tipo</th>
-        <th>Data</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- Supabase CDN -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
 
   <script>
@@ -88,8 +68,8 @@
 
     async function carregarMovimentacoes() {
       const { data, error } = await supabase.from('estoque').select('*').order('data', { ascending: false });
-      const tbody = document.querySelector('#tabela tbody');
-      tbody.innerHTML = '';
+      const tabela = document.getElementById('tabela');
+      tabela.innerHTML = '';
 
       if (error) {
         alert('Erro ao carregar: ' + error.message);
@@ -98,21 +78,22 @@
 
       data.forEach(item => {
         const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-gray-100';
         tr.innerHTML = `
-          <td>${item.id}</td>
-          <td>${item.codigo}</td>
-          <td>${item.descricao}</td>
-          <td>${item.endereco}</td>
-          <td>${item.lote}</td>
-          <td>${item.quantidade}</td>
-          <td>${item.tipo}</td>
-          <td>${new Date(item.data).toLocaleString()}</td>
-          <td class="actions">
-            <button onclick="editarItem(${item.id})">Editar</button>
-            <button onclick="excluirItem(${item.id})">Excluir</button>
+          <td class="px-4 py-2">${item.id}</td>
+          <td class="px-4 py-2">${item.codigo}</td>
+          <td class="px-4 py-2">${item.descricao}</td>
+          <td class="px-4 py-2">${item.endereco}</td>
+          <td class="px-4 py-2">${item.lote}</td>
+          <td class="px-4 py-2">${item.quantidade}</td>
+          <td class="px-4 py-2">${item.tipo}</td>
+          <td class="px-4 py-2">${new Date(item.data).toLocaleString()}</td>
+          <td class="px-4 py-2 flex flex-wrap gap-2">
+            <button onclick="editarItem(${item.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">Editar</button>
+            <button onclick="excluirItem(${item.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Excluir</button>
           </td>
         `;
-        tbody.appendChild(tr);
+        tabela.appendChild(tr);
       });
     }
 
@@ -144,10 +125,7 @@
         return;
       }
 
-      const total = data.reduce((acc, cur) => {
-        return acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade);
-      }, 0);
-
+      const total = data.reduce((acc, cur) => acc + (cur.tipo === 'entrada' ? cur.quantidade : -cur.quantidade), 0);
       alert(`Saldo atual do produto ${codigo}: ${total}`);
     }
 
@@ -170,5 +148,11 @@
     window.excluirItem = excluirItem;
     window.editarItem = editarItem;
   </script>
+
+  <style>
+    .input {
+      @apply border border-gray-300 rounded-lg px-4 py-2 w-full;
+    }
+  </style>
 </body>
 </html>
