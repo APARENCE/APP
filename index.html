@@ -1,157 +1,99 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Controle de Estoque</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js"></script>
-  </head>
-  <body class="bg-gray-100 text-gray-900">
-    <div class="container mx-auto px-4 py-6">
-      <h1 class="text-3xl font-bold text-center mb-6">Sistema de Estoque</h1>
+<head>
+  <meta charset="UTF-8">
+  <title>Estoque - Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+  <h1>Controle de Estoque (Supabase)</h1>
 
-      <!-- Formulário -->
-      <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-semibold mb-4">Registrar movimentação</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
-            id="codigo"
-            type="number"
-            placeholder="Código"
-            class="border border-gray-300 rounded px-3 py-2"
-          />
-          <input
-            id="descricao"
-            type="text"
-            placeholder="Descrição"
-            class="border border-gray-300 rounded px-3 py-2"
-          />
-          <input
-            id="endereco"
-            type="text"
-            placeholder="Endereço"
-            class="border border-gray-300 rounded px-3 py-2"
-          />
-          <input
-            id="lote"
-            type="text"
-            placeholder="Lote"
-            class="border border-gray-300 rounded px-3 py-2"
-          />
-          <select
-            id="tipo"
-            class="border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-          </select>
-          <input
-            id="quantidade"
-            type="number"
-            placeholder="Quantidade"
-            class="border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
-        <button
-          onclick="registrarMovimentacao()"
-          class="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-        >
-          Registrar
-        </button>
-      </div>
+  <form id="form">
+    <input type="text" id="codigo" placeholder="Código" required />
+    <input type="text" id="descricao" placeholder="Descrição" required />
+    <input type="text" id="endereco" placeholder="Endereço" required />
+    <input type="text" id="lote" placeholder="Lote" required />
+    <input type="text" id="tipo" placeholder="Tipo (entrada/saida)" required />
+    <input type="number" id="quantidade" placeholder="Quantidade" required />
+    <button type="submit">Lançar</button>
+  </form>
 
-      <!-- Tabela -->
-      <div class="bg-white shadow-md rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">Movimentações</h2>
-        <table class="min-w-full table-auto">
-          <thead>
-            <tr class="bg-gray-200 text-left">
-              <th class="px-4 py-2">Código</th>
-              <th class="px-4 py-2">Descrição</th>
-              <th class="px-4 py-2">Endereço</th>
-              <th class="px-4 py-2">Lote</th>
-              <th class="px-4 py-2">Tipo</th>
-              <th class="px-4 py-2">Quantidade</th>
-              <th class="px-4 py-2">Data</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaMovimentacoes"></tbody>
-        </table>
-      </div>
-    </div>
+  <hr>
 
-    <script>
-      const supabaseUrl = "https://msctrhembaolsklvibzb.supabase.co";
-      const supabaseKey =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U";
-      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  <h2>Dados do Estoque</h2>
+  <table border="1" id="tabela">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Código</th>
+        <th>Descrição</th>
+        <th>Endereço</th>
+        <th>Lote</th>
+        <th>Tipo</th>
+        <th>Data</th>
+        <th>Quantidade</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-      async function registrarMovimentacao() {
-        const codigo = document.getElementById("codigo").value;
-        const descricao = document.getElementById("descricao").value;
-        const endereco = document.getElementById("endereco").value;
-        const lote = document.getElementById("lote").value;
-        const tipo = document.getElementById("tipo").value;
-        const quantidade = parseInt(document.getElementById("quantidade").value);
-        const data = new Date().toISOString();
+  <script>
+    const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Validar campos mínimos
-        if (!codigo || !descricao || !quantidade) {
-          alert("Preencha Código, Descrição e Quantidade.");
-          return;
-        }
+    const tabela = document.querySelector('#tabela tbody');
+    const form = document.getElementById('form');
 
-        const { error } = await supabase.from("estoque").insert([
-          { codigo, descricao, endereco, lote, tipo, quantidade, data },
-        ]);
-
-        if (error) {
-          alert("Erro ao registrar: " + error.message);
-        } else {
-          alert("Movimentação registrada com sucesso!");
-          // Limpar campos após registrar
-          document.getElementById("codigo").value = "";
-          document.getElementById("descricao").value = "";
-          document.getElementById("endereco").value = "";
-          document.getElementById("lote").value = "";
-          document.getElementById("tipo").value = "entrada";
-          document.getElementById("quantidade").value = "";
-          carregarMovimentacoes();
-        }
+    async function carregarDados() {
+      const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: false });
+      if (error) {
+        console.error('Erro ao carregar:', error.message);
+        return;
       }
 
-      async function carregarMovimentacoes() {
-        const { data, error } = await supabase
-          .from("estoque")
-          .select("*")
-          .order("data", { ascending: false });
+      tabela.innerHTML = '';
+      data.forEach(item => {
+        const row = `<tr>
+          <td>${item.id}</td>
+          <td>${item.codigo}</td>
+          <td>${item.descricao}</td>
+          <td>${item.endereco}</td>
+          <td>${item.lote}</td>
+          <td>${item.tipo}</td>
+          <td>${item.data}</td>
+          <td>${item.quantidade}</td>
+        </tr>`;
+        tabela.innerHTML += row;
+      });
+    }
 
-        const tabela = document.getElementById("tabelaMovimentacoes");
-        tabela.innerHTML = "";
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        if (error) {
-          tabela.innerHTML = `<tr><td colspan="7" class="text-red-500 px-4 py-2">Erro ao carregar dados.</td></tr>`;
-          return;
-        }
+      const codigo = document.getElementById('codigo').value;
+      const descricao = document.getElementById('descricao').value;
+      const endereco = document.getElementById('endereco').value;
+      const lote = document.getElementById('lote').value;
+      const tipo = document.getElementById('tipo').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+      const data = new Date().toISOString();
 
-        data.forEach((item) => {
-          const row = `
-            <tr class="border-t">
-              <td class="px-4 py-2">${item.codigo}</td>
-              <td class="px-4 py-2">${item.descricao}</td>
-              <td class="px-4 py-2">${item.endereco}</td>
-              <td class="px-4 py-2">${item.lote}</td>
-              <td class="px-4 py-2">${item.tipo}</td>
-              <td class="px-4 py-2">${item.quantidade}</td>
-              <td class="px-4 py-2">${new Date(item.data).toLocaleString()}</td>
-            </tr>
-          `;
-          tabela.innerHTML += row;
-        });
+      const { error } = await supabase.from('estoque').insert([
+        { codigo, descricao, endereco, lote, tipo, data, quantidade }
+      ]);
+
+      if (error) {
+        alert('Erro ao inserir: ' + error.message);
+      } else {
+        alert('Lançamento realizado com sucesso!');
+        form.reset();
+        carregarDados();
       }
+    });
 
-      carregarMovimentacoes();
-    </script>
-  </body>
+    // Carrega os dados ao iniciar
+    carregarDados();
+  </script>
+</body>
 </html>
