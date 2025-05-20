@@ -1,27 +1,90 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Estoque - Supabase</title>
+  <title>Controle de Estoque - Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-  <h1>Controle de Estoque (Supabase)</h1>
+
+  <h1>Controle de Estoque</h1>
 
   <form id="form">
-    <input type="text" id="codigo" placeholder="Código" required />
-    <input type="text" id="descricao" placeholder="Descrição" required />
-    <input type="text" id="endereco" placeholder="Endereço" required />
-    <input type="text" id="lote" placeholder="Lote" required />
-    <input type="text" id="tipo" placeholder="Tipo (entrada/saida)" required />
-    <input type="number" id="quantidade" placeholder="Quantidade" required />
+    <label for="codigo">Código</label>
+    <input type="text" id="codigo" required>
+
+    <label for="descricao">Descrição</label>
+    <input type="text" id="descricao" required>
+
+    <label for="endereco">Endereço</label>
+    <input type="text" id="endereco" required>
+
+    <label for="lote">Lote</label>
+    <input type="text" id="lote" required>
+
+    <label for="tipo">Tipo</label>
+    <select id="tipo" required>
+      <option value="entrada">Entrada</option>
+      <option value="saida">Saída</option>
+    </select>
+
+    <label for="quantidade">Quantidade</label>
+    <input type="number" id="quantidade" required>
+
     <button type="submit">Lançar</button>
   </form>
 
-  <hr>
-
-  <h2>Dados do Estoque</h2>
-  <table border="1" id="tabela">
+  <h2>Histórico</h2>
+  <table id="tabela">
     <thead>
       <tr>
         <th>ID</th>
@@ -40,13 +103,18 @@
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
     const tabela = document.querySelector('#tabela tbody');
     const form = document.getElementById('form');
 
     async function carregarDados() {
-      const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('estoque')
+        .select('*')
+        .order('id', { ascending: false });
+
       if (error) {
         console.error('Erro ao carregar:', error.message);
         return;
@@ -61,7 +129,7 @@
           <td>${item.endereco}</td>
           <td>${item.lote}</td>
           <td>${item.tipo}</td>
-          <td>${item.data}</td>
+          <td>${new Date(item.data).toLocaleString()}</td>
           <td>${item.quantidade}</td>
         </tr>`;
         tabela.innerHTML += row;
@@ -79,7 +147,7 @@
       const quantidade = parseInt(document.getElementById('quantidade').value);
       const data = new Date().toISOString();
 
-      const { error } = await supabase.from('estoque').insert([
+      const { error } = await supabaseClient.from('estoque').insert([
         { codigo, descricao, endereco, lote, tipo, data, quantidade }
       ]);
 
@@ -92,8 +160,8 @@
       }
     });
 
-    // Carrega os dados ao iniciar
     carregarDados();
   </script>
+
 </body>
 </html>
