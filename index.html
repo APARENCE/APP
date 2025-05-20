@@ -3,428 +3,171 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sistema de Controle de Estoque</title>
+  <title>Controle de Estoque - Consulta Profissional</title>
+
   <style>
-    /* RESET e básico */
-    * {
-      box-sizing: border-box;
-    }
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f7f9fc;
-      margin: 0;
-      padding: 0;
+      background-color: #f7f9fb;
+      margin: 0; padding: 30px;
       color: #333;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 20px;
-    }
-    h1, h2 {
-      color: #222;
     }
 
-    /* Container */
     .container {
-      max-width: 960px;
-      width: 100%;
+      max-width: 900px;
+      margin: auto;
       background: white;
-      padding: 20px 30px 40px 30px;
-      border-radius: 10px;
-      box-shadow: 0 6px 15px rgb(0 0 0 / 0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
     }
 
-    /* Formulário e inputs */
-    .form-group {
-      margin-bottom: 15px;
-      max-width: 400px;
-    }
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 2px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
-    }
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    input[type="date"]:focus,
-    select:focus {
-      outline: none;
-      border-color: #1976d2;
-      box-shadow: 0 0 8px #1976d2aa;
-    }
-
-    /* Botões */
-    button {
-      background-color: #1976d2;
-      color: white;
-      padding: 12px 25px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover,
-    button:focus {
-      background-color: #0f4a8c;
-      outline: none;
-    }
-    button:disabled {
-      background-color: #a0a0a0;
-      cursor: not-allowed;
-    }
-
-    /* Mensagem de resultado */
-    #mensagem {
-      margin-top: 15px;
+    h1 {
       font-weight: 600;
-      min-height: 24px;
-    }
-    #mensagem.sucesso {
-      color: #2e7d32;
-    }
-    #mensagem.erro {
-      color: #d32f2f;
+      font-size: 2.4rem;
+      margin-bottom: 30px;
+      color: #0f4c81;
     }
 
-    /* Consulta de saldo */
-    #resultadoConsulta {
-      margin-top: 15px;
-      padding: 12px 15px;
-      border-radius: 8px;
+    .form-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group input[type="text"] {
+      flex: 1;
+      font-size: 1.1rem;
+      padding: 12px 16px;
+      border: 1px solid #cfd8dc;
+      border-radius: 6px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input[type="text"]:focus {
+      outline: none;
+      border-color: #0f4c81;
+      box-shadow: 0 0 6px #0f4c81aa;
+    }
+
+    .form-group button {
+      background-color: #0f4c81;
+      color: white;
+      border: none;
+      padding: 12px 24px;
       font-weight: 600;
       font-size: 1.1rem;
-      max-width: 350px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      box-shadow: 0 4px 8px rgba(15, 76, 129, 0.3);
     }
+
+    .form-group button:hover {
+      background-color: #093354;
+      box-shadow: 0 6px 12px rgba(9, 51, 84, 0.5);
+    }
+
+    /* Card resultado da consulta */
+    #resultadoConsulta {
+      background: #f0f4f7;
+      border-left: 6px solid #0f4c81;
+      padding: 24px 30px;
+      border-radius: 8px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #0f4c81;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      box-shadow: inset 0 0 10px #a0b9d1;
+      user-select: none;
+      transition: background-color 0.4s ease;
+    }
+
+    #resultadoConsulta.erro {
+      color: #b00020;
+      border-left-color: #b00020;
+      background: #fdecea;
+      box-shadow: inset 0 0 10px #f9c5c0;
+    }
+
     #resultadoConsulta.saldo-positivo {
-      background-color: #e8f5e9;
-      color: #2e7d32;
-      border: 1.5px solid #2e7d32;
+      color: #1b5e20;
+      border-left-color: #4caf50;
+      background: #e8f5e9;
+      box-shadow: inset 0 0 10px #a5d6a7;
     }
+
     #resultadoConsulta.saldo-negativo {
-      background-color: #ffebee;
-      color: #c62828;
-      border: 1.5px solid #c62828;
-    }
-
-    /* Tabela */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 30px;
-      font-size: 0.95rem;
-    }
-    thead {
-      background-color: #1976d2;
-      color: white;
-    }
-    th, td {
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    tbody tr:hover {
-      background-color: #f1f5fb;
-    }
-
-    /* Cores tipo movimentação */
-    .tipo-entrada {
-      color: #2e7d32; /* verde */
-      font-weight: 700;
-    }
-    .tipo-saida {
-      color: #c62828; /* vermelho */
-      font-weight: 700;
-    }
-
-    /* Responsivo */
-    @media (max-width: 720px) {
-      body {
-        padding: 15px;
-      }
-      .container {
-        padding: 15px 20px 30px 20px;
-      }
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      thead tr {
-        display: none;
-      }
-      tbody tr {
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-      }
-      tbody td {
-        border: none;
-        padding: 8px 10px;
-        text-align: right;
-        position: relative;
-      }
-      tbody td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 12px;
-        top: 8px;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        color: #555;
-      }
-      #resultadoConsulta {
-        max-width: 100%;
-      }
+      color: #b00020;
+      border-left-color: #d32f2f;
+      background: #ffebee;
+      box-shadow: inset 0 0 10px #ef9a9a;
     }
   </style>
 </head>
 <body>
-  <div class="container" role="main" aria-labelledby="tituloSistema">
-    <h1 id="tituloSistema">Controle de Estoque</h1>
+  <div class="container">
+    <h1>Consulta de Saldo do Produto</h1>
 
-    <!-- Formulário de cadastro -->
-    <section aria-labelledby="tituloCadastro">
-      <h2 id="tituloCadastro">Cadastrar movimentação</h2>
-      <form id="formMovimentacao" aria-describedby="mensagem">
-        <div class="form-group">
-          <label for="codigo">Código do produto</label>
-          <input type="text" id="codigo" name="codigo" placeholder="Ex: PROD123" required />
-        </div>
-        <div class="form-group">
-          <label for="descricao">Descrição</label>
-          <input type="text" id="descricao" name="descricao" placeholder="Ex: Produto Exemplo" required />
-        </div>
-        <div class="form-group">
-          <label for="endereco">Endereço</label>
-          <input type="text" id="endereco" name="endereco" placeholder="Ex: A1-23" required />
-        </div>
-        <div class="form-group">
-          <label for="lote">Lote</label>
-          <input type="text" id="lote" name="lote" placeholder="Ex: Lote 45" required />
-        </div>
-        <div class="form-group">
-          <label for="quantidade">Quantidade</label>
-          <input type="number" id="quantidade" name="quantidade" min="1" step="1" required />
-        </div>
-        <div class="form-group">
-          <label for="tipo">Tipo</label>
-          <select id="tipo" name="tipo" required>
-            <option value="">Selecione</option>
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="data">Data</label>
-          <input type="date" id="data" name="data" required />
-        </div>
-        <button type="submit" aria-label="Registrar movimentação">Registrar</button>
-      </form>
-      <div id="mensagem" role="alert" aria-live="polite"></div>
-    </section>
+    <div class="form-group">
+      <input type="text" id="consultaCodigo" placeholder="Digite o código do produto..." aria-label="Código do produto" />
+      <button onclick="consultarProduto()">Consultar</button>
+    </div>
 
-    <!-- Consulta saldo -->
-    <section aria-labelledby="tituloConsulta" style="margin-top: 40px;">
-      <h2 id="tituloConsulta">Consultar saldo do produto</h2>
-      <div class="form-group" style="max-width: 350px;">
-        <input type="text" id="consultaCodigo" placeholder="Digite o código para consultar" aria-label="Código para consulta" />
-        <button onclick="consultarProduto()" aria-label="Consultar produto">Consultar</button>
-      </div>
-      <div id="resultadoConsulta" role="alert" aria-live="polite"></div>
-    </section>
+    <div id="resultadoConsulta" aria-live="polite" role="status"></div>
+  </div>
 
-    <!-- Tabela de movimentações -->
-    <section aria-labelledby="tituloTabela" style="margin-top: 40px;">
-      <h2 id="tituloTabela" class="sr-only">Movimentações cadastradas</h2>
-      <table id="tabela" role="table" aria-describedby="descricaoTabela" aria-live="polite">
-        <caption id="descricaoTabela" class="sr-only">Lista de movimentações de estoque</caption>
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Código</th>
-            <th scope="col">Descrição</th>
-            <th scope="col">Endereço</th>
-            <th scope="col">Lote</th>
-            <th scope="col">Quantidade</th>
-            <th scope="col">Tipo</th>
-            <th scope="col">Data</th>
-            <th scope="col">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="9" style="text-align:center; padding:20px;">Carregando dados...</td></tr>
-        </tbody>
-      </table>
-    </section>
-<script>
-  // Simulação de banco de dados local (array)
-  // No uso real, você integraria com backend/Google Sheets/NocoDB etc.
-  let movimentacoes = [];
-  let contadorId = 1;
+  <script>
+    // Simulação dados locais para teste — no real, use seu backend
+    const movimentacoes = [
+      { codigo: 'ABC123', tipo: 'entrada', quantidade: 50 },
+      { codigo: 'ABC123', tipo: 'saida', quantidade: 20 },
+      { codigo: 'XYZ789', tipo: 'entrada', quantidade: 100 },
+      { codigo: 'XYZ789', tipo: 'saida', quantidade: 30 }
+    ];
 
-  const form = document.getElementById('formMovimentacao');
-  const mensagem = document.getElementById('mensagem');
-  const tabelaCorpo = document.querySelector('#tabela tbody');
-  const resultadoConsulta = document.getElementById('resultadoConsulta');
+    function consultarProduto() {
+      const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
+      const resultado = document.getElementById('resultadoConsulta');
+      resultado.textContent = '';
+      resultado.className = '';
 
-  // Função para limpar mensagem
-  function limparMensagem() {
-    mensagem.textContent = '';
-    mensagem.className = '';
-  }
+      if (codigoConsulta === '') {
+        resultado.textContent = 'Por favor, digite o código do produto para consultar.';
+        resultado.classList.add('erro');
+        return;
+      }
 
-  // Função para limpar form
-  function limparFormulario() {
-    form.reset();
-  }
+      // Filtrar movimentações por código (case insensitive)
+      const movs = movimentacoes.filter(mov => mov.codigo.toLowerCase() === codigoConsulta.toLowerCase());
 
-  // Função para renderizar tabela
-  function renderizarTabela() {
-    if (movimentacoes.length === 0) {
-      tabelaCorpo.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhuma movimentação cadastrada.</td></tr>`;
-      return;
+      if (movs.length === 0) {
+        resultado.textContent = `Nenhuma movimentação encontrada para o código "${codigoConsulta}".`;
+        resultado.classList.add('erro');
+        return;
+      }
+
+      // Calcular saldo
+      let saldo = 0;
+      movs.forEach(mov => {
+        saldo += mov.tipo === 'entrada' ? mov.quantidade : -mov.quantidade;
+      });
+
+      // Mostrar resultado com estilo e ícone
+      if (saldo > 0) {
+        resultado.classList.add('saldo-positivo');
+        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <span style="font-size:1.8rem;">&#9989;</span> <strong>${saldo}</strong>`;
+      } else if (saldo < 0) {
+        resultado.classList.add('saldo-negativo');
+        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <span style="font-size:1.8rem;">&#10060;</span> <strong>${saldo}</strong>`;
+      } else {
+        resultado.classList.add('saldo-positivo');
+        resultado.innerHTML = `Saldo atual do produto <strong>${codigoConsulta.toUpperCase()}</strong>: <strong>${saldo}</strong> (saldo zerado)`;
+      }
     }
-    tabelaCorpo.innerHTML = movimentacoes
-      .map(mov => `
-        <tr>
-          <td data-label="ID">${mov.id}</td>
-          <td data-label="Código">${mov.codigo}</td>
-          <td data-label="Descrição">${mov.descricao}</td>
-          <td data-label="Endereço">${mov.endereco}</td>
-          <td data-label="Lote">${mov.lote}</td>
-          <td data-label="Quantidade">${mov.quantidade}</td>
-          <td data-label="Tipo" class="tipo-${mov.tipo}">${mov.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
-          <td data-label="Data">${mov.data}</td>
-          <td data-label="Ações">
-            <button aria-label="Excluir movimentação ${mov.id}" onclick="excluirMovimentacao(${mov.id})" style="background:#c62828; padding:6px 12px; border-radius:5px; font-size:0.9rem;">Excluir</button>
-          </td>
-        </tr>
-      `)
-      .join('');
-  }
-
-  // Função para validar código
-  function validarCodigo(codigo) {
-    return codigo.trim().length > 0;
-  }
-
-  // Função para cadastrar movimentação
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    limparMensagem();
-
-    // Capturar dados
-    const codigo = form.codigo.value.trim();
-    const descricao = form.descricao.value.trim();
-    const endereco = form.endereco.value.trim();
-    const lote = form.lote.value.trim();
-    const quantidade = Number(form.quantidade.value);
-    const tipo = form.tipo.value;
-    const data = form.data.value;
-
-    // Validações simples
-    if (!validarCodigo(codigo)) {
-      mensagem.textContent = 'Código do produto inválido.';
-      mensagem.className = 'erro';
-      return;
-    }
-    if (!descricao || !endereco || !lote || quantidade <= 0 || !tipo || !data) {
-      mensagem.textContent = 'Por favor, preencha todos os campos corretamente.';
-      mensagem.className = 'erro';
-      return;
-    }
-
-    // Criar objeto movimentação
-    const novaMovimentacao = {
-      id: contadorId++,
-      codigo,
-      descricao,
-      endereco,
-      lote,
-      quantidade,
-      tipo,
-      data
-    };
-
-    // Adicionar na lista
-    movimentacoes.push(novaMovimentacao);
-
-    // Atualizar tabela
-    renderizarTabela();
-
-    // Limpar form e mensagem sucesso
-    limparFormulario();
-    mensagem.textContent = 'Movimentação cadastrada com sucesso!';
-    mensagem.className = 'sucesso';
-
-    // Limpar resultado de consulta
-    resultadoConsulta.textContent = '';
-    resultadoConsulta.className = '';
-  });
-
-  // Função para excluir movimentação
-  function excluirMovimentacao(id) {
-    const confirmacao = confirm(`Deseja realmente excluir a movimentação de ID ${id}?`);
-    if (!confirmacao) return;
-
-    movimentacoes = movimentacoes.filter(mov => mov.id !== id);
-    renderizarTabela();
-
-    mensagem.textContent = `Movimentação ${id} excluída com sucesso.`;
-    mensagem.className = 'sucesso';
-
-    // Limpar resultado de consulta
-    resultadoConsulta.textContent = '';
-    resultadoConsulta.className = '';
-  }
-
-  // Função para consultar saldo do produto pelo código
-  function consultarProduto() {
-    const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
-    resultadoConsulta.textContent = '';
-    resultadoConsulta.className = '';
-
-    if (codigoConsulta === '') {
-      resultadoConsulta.textContent = 'Digite o código do produto para consultar.';
-      resultadoConsulta.className = 'erro';
-      return;
-    }
-
-    // Filtrar movimentações do código informado
-    const movsDoProduto = movimentacoes.filter(mov => mov.codigo.toLowerCase() === codigoConsulta.toLowerCase());
-
-    if (movsDoProduto.length === 0) {
-      resultadoConsulta.textContent = `Nenhuma movimentação encontrada para o código "${codigoConsulta}".`;
-      resultadoConsulta.className = 'erro';
-      return;
-    }
-
-    // Calcular saldo
-    let saldo = 0;
-    movsDoProduto.forEach(mov => {
-      if (mov.tipo === 'entrada') saldo += mov.quantidade;
-      else saldo -= mov.quantidade;
-    });
-
-    // Mostrar resultado com estilo
-    resultadoConsulta.textContent = `Saldo atual do produto "${codigoConsulta}": ${saldo}`;
-    if (saldo >= 0) {
-      resultadoConsulta.className = 'saldo-positivo';
-    } else {
-      resultadoConsulta.className = 'saldo-negativo';
-    }
-  }
-
-  // Inicializar tabela vazia no carregamento
-  renderizarTabela();
-</script>
+  </script>
 </body>
 </html>
