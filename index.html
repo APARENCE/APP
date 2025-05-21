@@ -123,19 +123,16 @@
 <body>
   <h1>Controle de Estoque</h1>
 
-  <!-- CONSULTA DE SALDO -->
   <div class="consulta-container">
     <input type="text" id="consultaCodigo" placeholder="Digite o código do produto">
     <button onclick="consultarSaldo()">Consultar Saldo</button>
   </div>
 
-  <!-- RESULTADO DO SALDO -->
   <div id="resultadoSaldo" class="saldo-box">
     <span class="saldo-icon">📦</span>
     <span id="textoSaldo">Saldo: 0</span>
   </div>
 
-  <!-- FORMULÁRIO -->
   <form onsubmit="event.preventDefault(); adicionarProduto();">
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
@@ -151,7 +148,6 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
-  <!-- TABELA -->
   <table>
     <thead>
       <tr>
@@ -167,11 +163,9 @@
       </tr>
     </thead>
     <tbody id="tabela-dados">
-      <!-- Dados serão carregados aqui -->
     </tbody>
   </table>
 
-  <!-- SCRIPT -->
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
@@ -279,20 +273,16 @@
 
       let total = 0;
       data.forEach(item => {
-        if (item.tipo === 'Entrada') total += item.quantidade;
-        else if (item.tipo === 'Saída') total -= item.quantidade;
+        if (item.tipo === 'Entrada') {
+          total += item.quantidade;
+        } else if (item.tipo === 'Saída') {
+          total -= item.quantidade;
+        }
       });
 
-      textoSaldo.textContent = `Saldo do produto "${codigo}": ${total}`;
+      textoSaldo.textContent = `Saldo: ${total}`;
       resultadoDiv.style.display = 'flex';
     }
-
-    document.getElementById('consultaCodigo').addEventListener('input', function () {
-      const resultadoDiv = document.getElementById('resultadoSaldo');
-      if (!this.value.trim()) {
-        resultadoDiv.style.display = 'none';
-      }
-    });
 
     // Carregar dados ao iniciar
     carregarDados();
