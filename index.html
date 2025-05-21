@@ -69,28 +69,69 @@
       color: white;
     }
 
-    .saldo-container {
-      margin-top: 2rem;
+    .consulta-container {
+      margin-bottom: 1.5rem;
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
-    #resultadoSaldo {
-      font-size: 1.2rem;
-      font-weight: bold;
-      padding: 1rem 2rem;
-      border-radius: 10px;
-      display: none;
       align-items: center;
       gap: 10px;
+    }
+
+    .consulta-container input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .consulta-container button {
+      padding: 8px 12px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .saldo-box {
+      display: none;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #e0f2fe;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 400px;
+    }
+
+    .saldo-icon {
+      color: #0ea5e9;
+      font-size: 1.5rem;
     }
   </style>
 </head>
 <body>
   <h1>Controle de Estoque</h1>
 
+  <!-- CONSULTA DE SALDO -->
+  <div class="consulta-container">
+    <input type="text" id="consultaCodigo" placeholder="Digite o código do produto">
+    <button onclick="consultarSaldo()">Consultar Saldo</button>
+  </div>
+
+  <!-- RESULTADO DO SALDO -->
+  <div id="resultadoSaldo" class="saldo-box">
+    <span class="saldo-icon">📦</span>
+    <span id="textoSaldo">Saldo: 0</span>
+  </div>
+
+  <!-- FORMULÁRIO -->
   <form onsubmit="event.preventDefault(); adicionarProduto();">
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
@@ -106,13 +147,7 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
-  <!-- Campo para consulta de saldo -->
-  <div class="saldo-container">
-    <input type="text" id="consultaCodigo" placeholder="Consultar saldo por código" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;" />
-    <button onclick="consultarSaldo()" style="padding: 10px 15px; background-color: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Consultar Saldo</button>
-    <div id="resultadoSaldo"></div>
-  </div>
-
+  <!-- TABELA -->
   <table>
     <thead>
       <tr>
@@ -128,10 +163,11 @@
       </tr>
     </thead>
     <tbody id="tabela-dados">
-      <!-- Dados do Supabase aqui -->
+      <!-- Dados do Supabase -->
     </tbody>
   </table>
 
+  <!-- SCRIPT -->
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
@@ -230,6 +266,7 @@
     async function consultarSaldo() {
       const codigo = document.getElementById('consultaCodigo').value.trim();
       const resultadoDiv = document.getElementById('resultadoSaldo');
+      const textoSaldo = document.getElementById('textoSaldo');
 
       if (!codigo) {
         resultadoDiv.style.display = 'none';
@@ -238,29 +275,29 @@
 
       const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
 
-      if (error || !data.length) {
-        resultadoDiv.style.display = 'flex';
-        resultadoDiv.style.backgroundColor = '#fef2f2';
-        resultadoDiv.style.color = '#991b1b';
-        resultadoDiv.innerHTML = '⚠️ Código não encontrado ou erro na consulta.';
+      if (error) {
+        alert('Erro ao consultar saldo.');
+        console.error(error);
         return;
       }
 
-      let saldo = 0;
+      let total = 0;
       data.forEach(item => {
-        if (item.tipo === 'Entrada') saldo += item.quantidade;
-        else if (item.tipo === 'Saída') saldo -= item.quantidade;
+        if (item.tipo === 'Entrada') total += item.quantidade;
+        else if (item.tipo === 'Saída') total -= item.quantidade;
       });
 
-      const icon = saldo >= 0 ? '✅' : '⚠️';
-      resultadoDiv.innerHTML = `
-        ${icon} Saldo atual para o código <strong>${codigo}</strong>: 
-        <span style="color:${saldo >= 0 ? '#15803d' : '#b91c1c'}">${saldo}</span>
-      `;
-      resultadoDiv.style.backgroundColor = saldo >= 0 ? '#dcfce7' : '#fee2e2';
-      resultadoDiv.style.color = saldo >= 0 ? '#065f46' : '#991b1b';
+      textoSaldo.textContent = `Saldo do produto "${codigo}": ${total}`;
       resultadoDiv.style.display = 'flex';
     }
+
+    // Oculta o saldo automaticamente ao apagar o campo
+    document.getElementById('consultaCodigo').addEventListener('input', function () {
+      const resultadoDiv = document.getElementById('resultadoSaldo');
+      if (this.value.trim() === '') {
+        resultadoDiv.style.display = 'none';
+      }
+    });
 
     carregarDados();
   </script>
