@@ -40,6 +40,34 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    .consulta {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .consulta input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
+    }
+    .consulta button {
+      padding: 10px;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #resultado-consulta {
+      font-weight: bold;
+      margin-top: 10px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -73,6 +101,14 @@
 <body>
   <h1>Controle de Estoque</h1>
 
+  <!-- Consulta por código -->
+  <div class="consulta">
+    <input type="text" id="codigo-consulta" placeholder="Digite o código do produto">
+    <button onclick="consultarSaldo()">Consultar Saldo</button>
+  </div>
+  <p id="resultado-consulta"></p>
+
+  <!-- Formulário -->
   <form onsubmit="event.preventDefault(); adicionarProduto();">
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
@@ -88,6 +124,7 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
+  <!-- Tabela -->
   <table>
     <thead>
       <tr>
@@ -103,7 +140,7 @@
       </tr>
     </thead>
     <tbody id="tabela-dados">
-      <!-- Dados do Supabase aqui -->
+      <!-- Dados aqui -->
     </tbody>
   </table>
 
@@ -200,6 +237,35 @@
         alert('Registro atualizado.');
         carregarDados();
       }
+    }
+
+    async function consultarSaldo() {
+      const codigo = document.getElementById('codigo-consulta').value.trim();
+      const resultado = document.getElementById('resultado-consulta');
+
+      if (!codigo) {
+        resultado.textContent = 'Digite um código para consultar.';
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('estoque')
+        .select('tipo, quantidade')
+        .eq('codigo', codigo);
+
+      if (error || !data) {
+        resultado.textContent = 'Erro ao consultar.';
+        console.error(error);
+        return;
+      }
+
+      let saldo = 0;
+      data.forEach(item => {
+        if (item.tipo === 'Entrada') saldo += item.quantidade;
+        else if (item.tipo === 'Saída') saldo -= item.quantidade;
+      });
+
+      resultado.textContent = `Saldo total do produto "${codigo}": ${saldo}`;
     }
 
     carregarDados();
