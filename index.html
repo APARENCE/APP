@@ -40,34 +40,6 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .consulta {
-      background-color: #fff;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 2rem;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .consulta input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      flex: 1;
-    }
-    .consulta button {
-      padding: 10px;
-      background-color: #10b981;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #resultado-consulta {
-      font-weight: bold;
-      margin-top: 10px;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -96,19 +68,29 @@
       background-color: #ef4444;
       color: white;
     }
+
+    .saldo-container {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    #resultadoSaldo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>Controle de Estoque</h1>
 
-  <!-- Consulta por código -->
-  <div class="consulta">
-    <input type="text" id="codigo-consulta" placeholder="Digite o código do produto">
-    <button onclick="consultarSaldo()">Consultar Saldo</button>
-  </div>
-  <p id="resultado-consulta"></p>
-
-  <!-- Formulário -->
   <form onsubmit="event.preventDefault(); adicionarProduto();">
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
@@ -124,7 +106,13 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
-  <!-- Tabela -->
+  <!-- Campo para consulta de saldo -->
+  <div class="saldo-container">
+    <input type="text" id="consultaCodigo" placeholder="Consultar saldo por código" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;" />
+    <button onclick="consultarSaldo()" style="padding: 10px 15px; background-color: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Consultar Saldo</button>
+    <div id="resultadoSaldo"></div>
+  </div>
+
   <table>
     <thead>
       <tr>
@@ -140,7 +128,7 @@
       </tr>
     </thead>
     <tbody id="tabela-dados">
-      <!-- Dados aqui -->
+      <!-- Dados do Supabase aqui -->
     </tbody>
   </table>
 
@@ -240,22 +228,21 @@
     }
 
     async function consultarSaldo() {
-      const codigo = document.getElementById('codigo-consulta').value.trim();
-      const resultado = document.getElementById('resultado-consulta');
+      const codigo = document.getElementById('consultaCodigo').value.trim();
+      const resultadoDiv = document.getElementById('resultadoSaldo');
 
       if (!codigo) {
-        resultado.textContent = 'Digite um código para consultar.';
+        resultadoDiv.style.display = 'none';
         return;
       }
 
-      const { data, error } = await supabase
-        .from('estoque')
-        .select('tipo, quantidade')
-        .eq('codigo', codigo);
+      const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
 
-      if (error || !data) {
-        resultado.textContent = 'Erro ao consultar.';
-        console.error(error);
+      if (error || !data.length) {
+        resultadoDiv.style.display = 'flex';
+        resultadoDiv.style.backgroundColor = '#fef2f2';
+        resultadoDiv.style.color = '#991b1b';
+        resultadoDiv.innerHTML = '⚠️ Código não encontrado ou erro na consulta.';
         return;
       }
 
@@ -265,7 +252,14 @@
         else if (item.tipo === 'Saída') saldo -= item.quantidade;
       });
 
-      resultado.textContent = `Saldo total do produto "${codigo}": ${saldo}`;
+      const icon = saldo >= 0 ? '✅' : '⚠️';
+      resultadoDiv.innerHTML = `
+        ${icon} Saldo atual para o código <strong>${codigo}</strong>: 
+        <span style="color:${saldo >= 0 ? '#15803d' : '#b91c1c'}">${saldo}</span>
+      `;
+      resultadoDiv.style.backgroundColor = saldo >= 0 ? '#dcfce7' : '#fee2e2';
+      resultadoDiv.style.color = saldo >= 0 ? '#065f46' : '#991b1b';
+      resultadoDiv.style.display = 'flex';
     }
 
     carregarDados();
