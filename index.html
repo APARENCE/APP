@@ -14,7 +14,31 @@
     }
     h1 {
       text-align: center;
+      margin-bottom: 1rem;
+    }
+    form {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
       margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    form input, form select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    form button {
+      grid-column: span 2;
+      padding: 10px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
     table {
       width: 100%;
@@ -36,12 +60,6 @@
     tr:hover {
       background-color: #f1f5f9;
     }
-    button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
     .edit-btn {
       background-color: #10b981;
       color: white;
@@ -53,7 +71,23 @@
   </style>
 </head>
 <body>
-  <h1>Histórico de Estoque</h1>
+  <h1>Controle de Estoque</h1>
+
+  <form onsubmit="event.preventDefault(); adicionarProduto();">
+    <input type="text" id="codigo" placeholder="Código" required />
+    <input type="text" id="descricao" placeholder="Descrição" required />
+    <input type="text" id="endereco" placeholder="Endereço" required />
+    <input type="text" id="lote" placeholder="Lote" required />
+    <select id="tipo" required>
+      <option value="">Tipo</option>
+      <option value="Entrada">Entrada</option>
+      <option value="Saída">Saída</option>
+    </select>
+    <input type="datetime-local" id="data" required />
+    <input type="number" id="quantidade" placeholder="Quantidade" required />
+    <button type="submit">Adicionar Produto</button>
+  </form>
+
   <table>
     <thead>
       <tr>
@@ -107,6 +141,34 @@
         `;
         tabela.appendChild(row);
       });
+    }
+
+    async function adicionarProduto() {
+      const codigo = document.getElementById('codigo').value;
+      const descricao = document.getElementById('descricao').value;
+      const endereco = document.getElementById('endereco').value;
+      const lote = document.getElementById('lote').value;
+      const tipo = document.getElementById('tipo').value;
+      const data = document.getElementById('data').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+
+      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || isNaN(quantidade)) {
+        alert('Preencha todos os campos corretamente.');
+        return;
+      }
+
+      const { error } = await supabase.from('estoque').insert([{
+        codigo, descricao, endereco, lote, tipo, data, quantidade
+      }]);
+
+      if (error) {
+        alert('Erro ao adicionar produto.');
+        console.error(error);
+      } else {
+        alert('Produto adicionado com sucesso!');
+        document.querySelector('form').reset();
+        carregarDados();
+      }
     }
 
     async function excluir(id) {
