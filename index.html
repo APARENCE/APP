@@ -63,12 +63,20 @@
     .edit-btn {
       background-color: #10b981;
       color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
     }
     .delete-btn {
       background-color: #ef4444;
       color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
     }
-
     .consulta-container {
       margin-bottom: 1.5rem;
       background-color: #fff;
@@ -79,14 +87,12 @@
       align-items: center;
       gap: 10px;
     }
-
     .consulta-container input {
       flex: 1;
       padding: 8px;
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-
     .consulta-container button {
       padding: 8px 12px;
       background-color: #2563eb;
@@ -95,7 +101,6 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     .saldo-box {
       display: none;
       margin-bottom: 1.5rem;
@@ -109,7 +114,6 @@
       gap: 10px;
       max-width: 400px;
     }
-
     .saldo-icon {
       color: #0ea5e9;
       font-size: 1.5rem;
@@ -163,7 +167,7 @@
       </tr>
     </thead>
     <tbody id="tabela-dados">
-      <!-- Dados do Supabase -->
+      <!-- Dados serão carregados aqui -->
     </tbody>
   </table>
 
@@ -218,9 +222,7 @@
         return;
       }
 
-      const { error } = await supabase.from('estoque').insert([{
-        codigo, descricao, endereco, lote, tipo, data, quantidade
-      }]);
+      const { error } = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
 
       if (error) {
         alert('Erro ao adicionar produto.');
@@ -234,7 +236,6 @@
 
     async function excluir(id) {
       if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-
       const { error } = await supabase.from('estoque').delete().eq('id', id);
       if (error) {
         alert('Erro ao excluir');
@@ -248,12 +249,7 @@
     async function editar(id) {
       const novoValor = prompt('Digite a nova quantidade:');
       if (novoValor === null) return;
-
-      const { error } = await supabase
-        .from('estoque')
-        .update({ quantidade: parseInt(novoValor) })
-        .eq('id', id);
-
+      const { error } = await supabase.from('estoque').update({ quantidade: parseInt(novoValor) }).eq('id', id);
       if (error) {
         alert('Erro ao editar');
         console.error(error);
@@ -291,14 +287,14 @@
       resultadoDiv.style.display = 'flex';
     }
 
-    // Oculta o saldo automaticamente ao apagar o campo
     document.getElementById('consultaCodigo').addEventListener('input', function () {
       const resultadoDiv = document.getElementById('resultadoSaldo');
-      if (this.value.trim() === '') {
+      if (!this.value.trim()) {
         resultadoDiv.style.display = 'none';
       }
     });
 
+    // Carregar dados ao iniciar
     carregarDados();
   </script>
 </body>
