@@ -14,31 +14,7 @@
     }
     h1 {
       text-align: center;
-      margin-bottom: 1rem;
-    }
-    form {
-      background-color: #fff;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
       margin-bottom: 2rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
-    }
-    form input, form select {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    form button {
-      grid-column: span 2;
-      padding: 10px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
     }
     table {
       width: 100%;
@@ -60,6 +36,12 @@
     tr:hover {
       background-color: #f1f5f9;
     }
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
     .edit-btn {
       background-color: #10b981;
       color: white;
@@ -68,25 +50,37 @@
       background-color: #ef4444;
       color: white;
     }
+    .consulta-box {
+      margin: 2rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .consulta-box input {
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
+    }
+    .resultado {
+      font-weight: bold;
+      margin-top: 1rem;
+      background: #e5e7eb;
+      padding: 1rem;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
-  <h1>Controle de Estoque</h1>
+  <h1>Histórico de Estoque</h1>
 
-  <form onsubmit="event.preventDefault(); adicionarProduto();">
-    <input type="text" id="codigo" placeholder="Código" required />
-    <input type="text" id="descricao" placeholder="Descrição" required />
-    <input type="text" id="endereco" placeholder="Endereço" required />
-    <input type="text" id="lote" placeholder="Lote" required />
-    <select id="tipo" required>
-      <option value="">Tipo</option>
-      <option value="Entrada">Entrada</option>
-      <option value="Saída">Saída</option>
-    </select>
-    <input type="datetime-local" id="data" required />
-    <input type="number" id="quantidade" placeholder="Quantidade" required />
-    <button type="submit">Adicionar Produto</button>
-  </form>
+  <div class="consulta-box">
+    <input type="text" id="produtoBusca" placeholder="Digite o nome do produto">
+    <button onclick="consultarProduto()" style="background-color:#2563eb; color:white;">Consultar Produto</button>
+  </div>
+
+  <div id="resultadoConsulta" class="resultado"></div>
 
   <table>
     <thead>
@@ -112,10 +106,13 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    let todosOsDados = [];
+
     async function carregarDados() {
       const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
       const tabela = document.getElementById('tabela-dados');
       tabela.innerHTML = '';
+      todosOsDados = data || [];
 
       if (error) {
         tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
@@ -123,7 +120,7 @@
         return;
       }
 
-      data.forEach(item => {
+      todosOsDados.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${item.id}</td>
@@ -143,37 +140,8 @@
       });
     }
 
-    async function adicionarProduto() {
-      const codigo = document.getElementById('codigo').value;
-      const descricao = document.getElementById('descricao').value;
-      const endereco = document.getElementById('endereco').value;
-      const lote = document.getElementById('lote').value;
-      const tipo = document.getElementById('tipo').value;
-      const data = document.getElementById('data').value;
-      const quantidade = parseInt(document.getElementById('quantidade').value);
-
-      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || isNaN(quantidade)) {
-        alert('Preencha todos os campos corretamente.');
-        return;
-      }
-
-      const { error } = await supabase.from('estoque').insert([{
-        codigo, descricao, endereco, lote, tipo, data, quantidade
-      }]);
-
-      if (error) {
-        alert('Erro ao adicionar produto.');
-        console.error(error);
-      } else {
-        alert('Produto adicionado com sucesso!');
-        document.querySelector('form').reset();
-        carregarDados();
-      }
-    }
-
     async function excluir(id) {
       if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-
       const { error } = await supabase.from('estoque').delete().eq('id', id);
       if (error) {
         alert('Erro ao excluir');
@@ -187,12 +155,7 @@
     async function editar(id) {
       const novoValor = prompt('Digite a nova quantidade:');
       if (novoValor === null) return;
-
-      const { error } = await supabase
-        .from('estoque')
-        .update({ quantidade: parseInt(novoValor) })
-        .eq('id', id);
-
+      const { error } = await supabase.from('estoque').update({ quantidade: parseInt(novoValor) }).eq('id', id);
       if (error) {
         alert('Erro ao editar');
         console.error(error);
@@ -200,6 +163,36 @@
         alert('Registro atualizado.');
         carregarDados();
       }
+    }
+
+    function consultarProduto() {
+      const nome = document.getElementById('produtoBusca').value.trim().toLowerCase();
+      const resultado = document.getElementById('resultadoConsulta');
+
+      if (!nome) {
+        resultado.textContent = 'Digite o nome do produto.';
+        return;
+      }
+
+      const produtosFiltrados = todosOsDados.filter(item =>
+        item.descricao && item.descricao.toLowerCase().includes(nome)
+      );
+
+      if (produtosFiltrados.length === 0) {
+        resultado.textContent = 'Produto não encontrado.';
+        return;
+      }
+
+      let total = 0;
+      produtosFiltrados.forEach(item => {
+        if (item.tipo.toLowerCase() === 'entrada') {
+          total += item.quantidade;
+        } else if (item.tipo.toLowerCase() === 'saida') {
+          total -= item.quantidade;
+        }
+      });
+
+      resultado.textContent = `Saldo atual de "${nome}": ${total} unidade(s).`;
     }
 
     carregarDados();
