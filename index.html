@@ -2,121 +2,325 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Estoque</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle de Estoque</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    form {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    form input, form select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    form button {
+      grid-column: span 2;
+      padding: 10px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background-color: #2563eb;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+    .edit-btn {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .delete-btn {
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .consulta-container {
+      margin-bottom: 1.5rem;
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 400px;
+    }
+    .consulta-container input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .consulta-container button {
+      padding: 8px 12px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .saldo-box {
+      display: none;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #e0f2fe;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 400px;
+    }
+    .saldo-icon {
+      color: #0ea5e9;
+      font-size: 1.5rem;
+    }
+    /* Botão para mostrar/esconder formulário */
+    #btnMostrarForm {
+      margin-bottom: 1rem;
+      padding: 10px 15px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      max-width: 400px;
+      display: block;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-4">
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-4xl font-bold text-center mb-6">Controle de Estoque</h1>
+<body>
+  <h1>Controle de Estoque</h1>
 
-    <div class="mb-6 p-4 bg-white rounded shadow">
-      <h2 class="text-2xl font-semibold mb-2">Resumo por Código</h2>
-      <table class="min-w-full table-auto border border-gray-300 text-sm">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 border">Código</th>
-            <th class="px-4 py-2 border">Descrição</th>
-            <th class="px-4 py-2 border">Total em Estoque</th>
-          </tr>
-        </thead>
-        <tbody id="resumo-estoque-body">
-          <!-- Dados dinâmicos -->
-        </tbody>
-      </table>
-    </div>
+  <!-- Botão para mostrar/ocultar o formulário de inserção -->
+  <button id="btnMostrarForm">Inserir Novo Item</button>
 
-    <div class="p-4 bg-white rounded shadow">
-      <h2 class="text-2xl font-semibold mb-2">Movimentações</h2>
-      <table class="min-w-full table-auto border border-gray-300 text-sm">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 border">Código</th>
-            <th class="px-4 py-2 border">Descrição</th>
-            <th class="px-4 py-2 border">Endereço</th>
-            <th class="px-4 py-2 border">Lote</th>
-            <th class="px-4 py-2 border">Tipo</th>
-            <th class="px-4 py-2 border">Data</th>
-            <th class="px-4 py-2 border">Quantidade</th>
-          </tr>
-        </thead>
-        <tbody id="tabela-estoque-body">
-          <!-- Dados dinâmicos -->
-        </tbody>
-      </table>
-    </div>
+  <!-- CONSULTA DE SALDO -->
+  <div class="consulta-container">
+    <input type="text" id="consultaCodigo" placeholder="Digite o código do produto" />
+    <button onclick="consultarSaldo()">Consultar Saldo</button>
   </div>
 
+  <!-- RESULTADO DO SALDO -->
+  <div id="resultadoSaldo" class="saldo-box">
+    <span class="saldo-icon">📦</span>
+    <span id="textoSaldo">Saldo: 0</span>
+  </div>
+
+  <!-- FORMULÁRIO (oculto inicialmente) -->
+  <form id="formProduto" style="display:none;" onsubmit="event.preventDefault(); adicionarProduto();">
+    <input type="text" id="codigo" placeholder="Código" required />
+    <input type="text" id="descricao" placeholder="Descrição" required />
+    <input type="text" id="endereco" placeholder="Endereço" required />
+    <input type="text" id="lote" placeholder="Lote" required />
+    <select id="tipo" required>
+      <option value="">Tipo</option>
+      <option value="Entrada">Entrada</option>
+      <option value="Saída">Saída</option>
+    </select>
+    <input type="datetime-local" id="data" required />
+    <input type="number" id="quantidade" placeholder="Quantidade" required />
+    <button type="submit">Adicionar Produto</button>
+  </form>
+
+  <!-- TABELA -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Código</th>
+        <th>Descrição</th>
+        <th>Endereço</th>
+        <th>Lote</th>
+        <th>Tipo</th>
+        <th>Data</th>
+        <th>Quantidade</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabela-dados">
+      <!-- Dados serão carregados aqui -->
+    </tbody>
+  </table>
+
+  <!-- SCRIPT -->
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const tableName = 'estoque';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const btnMostrarForm = document.getElementById('btnMostrarForm');
+    const formProduto = document.getElementById('formProduto');
+
+    // Toggle mostrar/ocultar formulário
+    btnMostrarForm.addEventListener('click', () => {
+      if(formProduto.style.display === 'none') {
+        formProduto.style.display = 'grid';
+        btnMostrarForm.textContent = 'Ocultar Formulário';
+      } else {
+        formProduto.style.display = 'none';
+        btnMostrarForm.textContent = 'Inserir Novo Item';
+      }
+    });
 
     async function carregarDados() {
-      const resposta = await fetch(`${supabaseUrl}/rest/v1/${tableName}?select=*`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`
-        }
-      });
-
-      const dados = await resposta.json();
-
-      const tabela = document.getElementById('tabela-estoque-body');
-      const resumo = document.getElementById('resumo-estoque-body');
-
+      const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
+      const tabela = document.getElementById('tabela-dados');
       tabela.innerHTML = '';
-      resumo.innerHTML = '';
 
-      const resumoPorCodigo = {};
+      if (error) {
+        tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
+        console.error(error);
+        return;
+      }
 
-      dados.forEach(item => {
-        const { codigo, descricao, endereco, lote, tipo, data, quantidade } = item;
-
-        // Preencher tabela principal
-        const linha = `
-          <tr>
-            <td class="border px-4 py-2">${codigo}</td>
-            <td class="border px-4 py-2">${descricao}</td>
-            <td class="border px-4 py-2">${endereco}</td>
-            <td class="border px-4 py-2">${lote}</td>
-            <td class="border px-4 py-2">${tipo}</td>
-            <td class="border px-4 py-2">${data}</td>
-            <td class="border px-4 py-2">${quantidade}</td>
-          </tr>
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.id}</td>
+          <td>${item.codigo}</td>
+          <td>${item.descricao}</td>
+          <td>${item.endereco}</td>
+          <td>${item.lote}</td>
+          <td>${item.tipo}</td>
+          <td>${new Date(item.data).toLocaleString()}</td>
+          <td>${item.quantidade}</td>
+          <td>
+            <button class="edit-btn" onclick="editar(${item.id})">Editar</button>
+            <button class="delete-btn" onclick="excluir(${item.id})">Excluir</button>
+          </td>
         `;
-        tabela.innerHTML += linha;
-
-        // Calcular resumo por código
-        if (!resumoPorCodigo[codigo]) {
-          resumoPorCodigo[codigo] = {
-            descricao: descricao,
-            total: 0
-          };
-        }
-
-        if (tipo.toLowerCase() === 'entrada') {
-          resumoPorCodigo[codigo].total += quantidade;
-        } else if (tipo.toLowerCase() === 'saida') {
-          resumoPorCodigo[codigo].total -= quantidade;
-        }
-      });
-
-      // Preencher tabela de resumo
-      Object.keys(resumoPorCodigo).forEach(codigo => {
-        const item = resumoPorCodigo[codigo];
-        const linhaResumo = `
-          <tr>
-            <td class="border px-4 py-2">${codigo}</td>
-            <td class="border px-4 py-2">${item.descricao}</td>
-            <td class="border px-4 py-2 font-bold">${item.total}</td>
-          </tr>
-        `;
-        resumo.innerHTML += linhaResumo;
+        tabela.appendChild(row);
       });
     }
 
-    carregarDados();
+    async function adicionarProduto() {
+      const codigo = document.getElementById('codigo').value.trim();
+      const descricao = document.getElementById('descricao').value.trim();
+      const endereco = document.getElementById('endereco').value.trim();
+      const lote = document.getElementById('lote').value.trim();
+      const tipo = document.getElementById('tipo').value;
+      const data = document.getElementById('data').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+
+      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || isNaN(quantidade)) {
+        alert('Preencha todos os campos corretamente.');
+        return;
+      }
+
+      const { error } = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
+
+      if (error) {
+        alert('Erro ao adicionar produto.');
+        console.error(error);
+      } else {
+        alert('Produto adicionado com sucesso!');
+        document.querySelector('form').reset();
+        formProduto.style.display = 'none';
+        btnMostrarForm.textContent = 'Inserir Novo Item';
+        carregarDados();
+      }
+    }
+
+    async function excluir(id) {
+      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+      const { error } = await supabase.from('estoque').delete().eq('id', id);
+      if (error) {
+        alert('Erro ao excluir');
+        console.error(error);
+      } else {
+        carregarDados();
+      }
+    }
+
+    // Função para consultar saldo de um código
+    async function consultarSaldo() {
+      const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
+      if (!codigoConsulta) {
+        alert('Digite o código do produto para consulta.');
+        return;
+      }
+
+      // Buscar todas movimentações do código informado
+      const { data, error } = await supabase.from('estoque').select('tipo, quantidade').eq('codigo', codigoConsulta);
+      if (error) {
+        alert('Erro ao consultar saldo.');
+        console.error(error);
+        return;
+      }
+      if (!data || data.length === 0) {
+        alert('Nenhuma movimentação encontrada para este código.');
+        return;
+      }
+
+      // Calcular saldo: soma entradas - soma saídas
+      let saldo = 0;
+      data.forEach(item => {
+        if (item.tipo.toLowerCase() === 'entrada') {
+          saldo += item.quantidade;
+        } else if (item.tipo.toLowerCase() === 'saída' || item.tipo.toLowerCase() === 'saida') {
+          saldo -= item.quantidade;
+        }
+      });
+
+      // Mostrar resultado
+      const resultado = document.getElementById('resultadoSaldo');
+      const textoSaldo = document.getElementById('textoSaldo');
+      textoSaldo.textContent = `Saldo para código ${codigoConsulta}: ${saldo}`;
+      resultado.style.display = 'flex';
+    }
+
+    // Função para editar (apenas placeholder, pode implementar depois)
+    function editar(id) {
+      alert('Função de editar não implementada ainda.');
+    }
+
+    // Carregar dados ao abrir a página
+    window.onload = carregarDados;
   </script>
 </body>
 </html>
