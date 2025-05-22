@@ -6,14 +6,16 @@
   <title>Controle de Estoque</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* Seu CSS permanece inalterado */
     body {
       font-family: Arial, sans-serif;
       background-color: #f3f4f6;
       padding: 2rem;
       color: #333;
     }
-    h1 { text-align: center; margin-bottom: 1rem; }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
     form {
       background-color: #fff;
       padding: 1rem;
@@ -51,8 +53,13 @@
       text-align: left;
       border-bottom: 1px solid #eee;
     }
-    th { background-color: #2563eb; color: white; }
-    tr:hover { background-color: #f1f5f9; }
+    th {
+      background-color: #2563eb;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f5f9;
+    }
     .edit-btn {
       background-color: #10b981;
       color: white;
@@ -96,6 +103,7 @@
       cursor: pointer;
     }
     .saldo-box {
+      display: none;
       margin-bottom: 1.5rem;
       padding: 1rem;
       background-color: #e0f2fe;
@@ -106,9 +114,12 @@
       align-items: center;
       gap: 10px;
       max-width: 400px;
-      display: none;
     }
-    .saldo-icon { color: #0ea5e9; font-size: 1.5rem; }
+    .saldo-icon {
+      color: #0ea5e9;
+      font-size: 1.5rem;
+    }
+    /* Botão para mostrar/esconder formulário */
     #btnMostrarForm {
       margin-bottom: 1rem;
       padding: 10px 15px;
@@ -125,20 +136,23 @@
 <body>
   <h1>Controle de Estoque</h1>
 
+  <!-- Botão para mostrar/ocultar o formulário de inserção -->
   <button id="btnMostrarForm">Inserir Novo Item</button>
 
+  <!-- CONSULTA DE SALDO -->
   <div class="consulta-container">
     <input type="text" id="consultaCodigo" placeholder="Digite o código do produto" />
     <button onclick="consultarSaldo()">Consultar Saldo</button>
   </div>
 
+  <!-- RESULTADO DO SALDO -->
   <div id="resultadoSaldo" class="saldo-box">
     <span class="saldo-icon">📦</span>
     <span id="textoSaldo">Saldo: 0</span>
   </div>
 
+  <!-- FORMULÁRIO (oculto inicialmente) -->
   <form id="formProduto" style="display:none;" onsubmit="event.preventDefault(); adicionarProduto();">
-    <input type="hidden" id="produtoId" />
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
     <input type="text" id="endereco" placeholder="Endereço" required />
@@ -153,6 +167,7 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
+  <!-- TABELA -->
   <table>
     <thead>
       <tr>
@@ -167,17 +182,21 @@
         <th>Ações</th>
       </tr>
     </thead>
-    <tbody id="tabela-dados"></tbody>
+    <tbody id="tabela-dados">
+      <!-- Dados serão carregados aqui -->
+    </tbody>
   </table>
 
+  <!-- SCRIPT -->
   <script>
     const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJI...'; // sua chave
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const btnMostrarForm = document.getElementById('btnMostrarForm');
     const formProduto = document.getElementById('formProduto');
 
+    // Toggle mostrar/ocultar formulário
     btnMostrarForm.addEventListener('click', () => {
       if(formProduto.style.display === 'none') {
         formProduto.style.display = 'grid';
@@ -185,7 +204,6 @@
       } else {
         formProduto.style.display = 'none';
         btnMostrarForm.textContent = 'Inserir Novo Item';
-        document.getElementById('produtoId').value = ''; // limpa edição
       }
     });
 
@@ -196,6 +214,7 @@
 
       if (error) {
         tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
+        console.error(error);
         return;
       }
 
@@ -220,7 +239,6 @@
     }
 
     async function adicionarProduto() {
-      const id = document.getElementById('produtoId').value;
       const codigo = document.getElementById('codigo').value.trim();
       const descricao = document.getElementById('descricao').value.trim();
       const endereco = document.getElementById('endereco').value.trim();
@@ -234,76 +252,75 @@
         return;
       }
 
-      if (id) {
-        const { error } = await supabase.from('estoque').update({ codigo, descricao, endereco, lote, tipo, data, quantidade }).eq('id', id);
-        if (error) {
-          alert('Erro ao editar produto.');
-        } else {
-          alert('Produto atualizado com sucesso!');
-        }
-      } else {
-        const { error } = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
-        if (error) {
-          alert('Erro ao adicionar produto.');
-        } else {
-          alert('Produto adicionado com sucesso!');
-        }
-      }
+      const { error } = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
 
-      document.querySelector('form').reset();
-      document.getElementById('produtoId').value = '';
-      formProduto.style.display = 'none';
-      btnMostrarForm.textContent = 'Inserir Novo Item';
-      carregarDados();
-    }
-
-    async function editar(id) {
-      const { data, error } = await supabase.from('estoque').select('*').eq('id', id).single();
       if (error) {
-        alert('Erro ao buscar item para edição.');
-        return;
+        alert('Erro ao adicionar produto.');
+        console.error(error);
+      } else {
+        alert('Produto adicionado com sucesso!');
+        document.querySelector('form').reset();
+        formProduto.style.display = 'none';
+        btnMostrarForm.textContent = 'Inserir Novo Item';
+        carregarDados();
       }
-
-      document.getElementById('produtoId').value = data.id;
-      document.getElementById('codigo').value = data.codigo;
-      document.getElementById('descricao').value = data.descricao;
-      document.getElementById('endereco').value = data.endereco;
-      document.getElementById('lote').value = data.lote;
-      document.getElementById('tipo').value = data.tipo;
-      document.getElementById('data').value = data.data;
-      document.getElementById('quantidade').value = data.quantidade;
-
-      formProduto.style.display = 'grid';
-      btnMostrarForm.textContent = 'Ocultar Formulário';
     }
 
     async function excluir(id) {
       if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-      await supabase.from('estoque').delete().eq('id', id);
-      carregarDados();
+      const { error } = await supabase.from('estoque').delete().eq('id', id);
+      if (error) {
+        alert('Erro ao excluir');
+        console.error(error);
+      } else {
+        carregarDados();
+      }
     }
 
+    // Função para consultar saldo de um código
     async function consultarSaldo() {
-      const codigo = document.getElementById('consultaCodigo').value.trim();
-      if (!codigo) return;
-      const { data, error } = await supabase.from('estoque').select('*').eq('codigo', codigo);
-
-      if (error || !data.length) {
-        document.getElementById('resultadoSaldo').style.display = 'none';
-        alert('Produto não encontrado.');
+      const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
+      if (!codigoConsulta) {
+        alert('Digite o código do produto para consulta.');
         return;
       }
 
+      // Buscar todas movimentações do código informado
+      const { data, error } = await supabase.from('estoque').select('tipo, quantidade').eq('codigo', codigoConsulta);
+      if (error) {
+        alert('Erro ao consultar saldo.');
+        console.error(error);
+        return;
+      }
+      if (!data || data.length === 0) {
+        alert('Nenhuma movimentação encontrada para este código.');
+        return;
+      }
+
+      // Calcular saldo: soma entradas - soma saídas
       let saldo = 0;
       data.forEach(item => {
-        saldo += item.tipo === 'Entrada' ? item.quantidade : -item.quantidade;
+        if (item.tipo.toLowerCase() === 'entrada') {
+          saldo += item.quantidade;
+        } else if (item.tipo.toLowerCase() === 'saída' || item.tipo.toLowerCase() === 'saida') {
+          saldo -= item.quantidade;
+        }
       });
 
-      document.getElementById('textoSaldo').textContent = `Saldo: ${saldo}`;
-      document.getElementById('resultadoSaldo').style.display = 'flex';
+      // Mostrar resultado
+      const resultado = document.getElementById('resultadoSaldo');
+      const textoSaldo = document.getElementById('textoSaldo');
+      textoSaldo.textContent = `Saldo para código ${codigoConsulta}: ${saldo}`;
+      resultado.style.display = 'flex';
     }
 
-    carregarDados();
+    // Função para editar (apenas placeholder, pode implementar depois)
+    function editar(id) {
+      alert('Função de editar não implementada ainda.');
+    }
+
+    // Carregar dados ao abrir a página
+    window.onload = carregarDados;
   </script>
 </body>
 </html>
