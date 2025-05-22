@@ -130,13 +130,25 @@
       max-width: 400px;
       display: block;
     }
+    #btnToggleConsulta {
+      margin-bottom: 1rem;
+      padding: 10px 15px;
+      background-color: #6b7280;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      max-width: 400px;
+      display: block;
+    }
   </style>
 </head>
 <body>
   <h1>Controle de Estoque</h1>
   <button id="btnMostrarForm">Inserir Novo Item</button>
+  <button id="btnToggleConsulta">Ocultar Consulta de Saldo</button>
 
-  <div class="consulta-container">
+  <div class="consulta-container" id="consultaContainer">
     <input type="text" id="consultaCodigo" placeholder="Digite o código do produto" />
     <button onclick="consultarSaldo()">Consultar Saldo</button>
   </div>
@@ -198,6 +210,21 @@
       }
     });
 
+    const btnToggleConsulta = document.getElementById('btnToggleConsulta');
+    const consultaContainer = document.getElementById('consultaContainer');
+    const resultadoSaldo = document.getElementById('resultadoSaldo');
+
+    btnToggleConsulta.addEventListener('click', () => {
+      if (consultaContainer.style.display !== 'none') {
+        consultaContainer.style.display = 'none';
+        resultadoSaldo.style.display = 'none'; // também esconde resultado se visível
+        btnToggleConsulta.textContent = 'Mostrar Consulta de Saldo';
+      } else {
+        consultaContainer.style.display = 'flex';
+        btnToggleConsulta.textContent = 'Ocultar Consulta de Saldo';
+      }
+    });
+
     async function carregarDados() {
       const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
       const tabela = document.getElementById('tabela-dados');
@@ -237,36 +264,59 @@
       const lote = document.getElementById('lote').value.trim();
       const tipo = document.getElementById('tipo').value;
       const data = document.getElementById('data').value;
-      const quantidade = parseInt(document.getElementById('quantidade').value);
+      const quantidade = Number(document.getElementById('quantidade').value);
 
-      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || isNaN(quantidade)) {
+      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || !quantidade) {
         alert('Preencha todos os campos corretamente.');
         return;
       }
 
-      let result;
       if (id) {
-        result = await supabase.from('estoque').update({ codigo, descricao, endereco, lote, tipo, data, quantidade }).eq('id', id);
+        // Atualizar
+        const { error } = await supabase
+          .from('estoque')
+          .update({ codigo, descricao, endereco, lote, tipo, data, quantidade })
+          .eq('id', id);
+
+        if (error) {
+          alert('Erro ao atualizar produto.');
+          console.error(error);
+          return;
+        }
       } else {
-        result = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
+        // Inserir
+        const { error } = await supabase
+          .from('estoque')
+          .insert({ codigo, descricao, endereco, lote, tipo, data, quantidade });
+
+        if (error) {
+          alert('Erro ao inserir produto.');
+          console.error(error);
+          return;
+        }
       }
 
-      if (result.error) {
-        alert('Erro ao salvar o produto.');
-        console.error(result.error);
-      } else {
-        document.getElementById('formProduto').reset();
-        document.getElementById('editandoId').value = '';
-        formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
-        carregarDados();
-      }
+      limparFormulario();
+      carregarDados();
+      formProduto.style.display = 'none';
+      btnMostrarForm.textContent = 'Inserir Novo Item';
+    }
+
+    function limparFormulario() {
+      document.getElementById('editandoId').value = '';
+      document.getElementById('codigo').value = '';
+      document.getElementById('descricao').value = '';
+      document.getElementById('endereco').value = '';
+      document.getElementById('lote').value = '';
+      document.getElementById('tipo').value = '';
+      document.getElementById('data').value = '';
+      document.getElementById('quantidade').value = '';
     }
 
     async function editar(id) {
       const { data, error } = await supabase.from('estoque').select('*').eq('id', id).single();
       if (error) {
-        alert('Erro ao buscar dados para edição.');
+        alert('Erro ao buscar produto para editar.');
         console.error(error);
         return;
       }
@@ -277,7 +327,7 @@
       document.getElementById('endereco').value = data.endereco;
       document.getElementById('lote').value = data.lote;
       document.getElementById('tipo').value = data.tipo;
-      document.getElementById('data').value = data.data.slice(0, 16); // para datetime-local
+      document.getElementById('data').value = data.data.slice(0, 16);
       document.getElementById('quantidade').value = data.quantidade;
 
       formProduto.style.display = 'grid';
@@ -285,41 +335,49 @@
     }
 
     async function excluir(id) {
-      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+      if (!confirm('Deseja realmente excluir este registro?')) return;
       const { error } = await supabase.from('estoque').delete().eq('id', id);
       if (error) {
-        alert('Erro ao excluir');
+        alert('Erro ao excluir registro.');
         console.error(error);
-      } else {
-        carregarDados();
+        return;
       }
+      carregarDados();
     }
 
     async function consultarSaldo() {
       const codigo = document.getElementById('consultaCodigo').value.trim();
-      const resultado = document.getElementById('resultadoSaldo');
-      const texto = document.getElementById('textoSaldo');
-
-      if (!codigo) return;
-
-      const { data, error } = await supabase
-        .from('estoque')
-        .select('tipo, quantidade')
-        .eq('codigo', codigo);
-
-      if (error || !data.length) {
-        texto.textContent = 'Produto não encontrado.';
-        resultado.style.display = 'flex';
+      if (!codigo) {
+        alert('Informe o código do produto para consultar.');
         return;
       }
 
+      const { data, error } = await supabase
+        .from('estoque')
+        .select('quantidade, tipo')
+        .eq('codigo', codigo);
+
+      if (error) {
+        alert('Erro ao consultar saldo.');
+        console.error(error);
+        return;
+      }
+
+      if (data.length === 0) {
+        alert('Produto não encontrado.');
+        return;
+      }
+
+      // Calcular saldo: somar entradas e subtrair saídas
       let saldo = 0;
       data.forEach(item => {
-        saldo += item.tipo === 'Entrada' ? item.quantidade : -item.quantidade;
+        if (item.tipo.toLowerCase() === 'entrada') saldo += item.quantidade;
+        else if (item.tipo.toLowerCase() === 'saída' || item.tipo.toLowerCase() === 'saida') saldo -= item.quantidade;
       });
 
-      texto.textContent = `Saldo: ${saldo}`;
-      resultado.style.display = 'flex';
+      const textoSaldo = document.getElementById('textoSaldo');
+      textoSaldo.textContent = `Saldo do produto ${codigo}: ${saldo}`;
+      resultadoSaldo.style.display = 'flex';
     }
 
     carregarDados();
