@@ -119,7 +119,6 @@
       color: #0ea5e9;
       font-size: 1.5rem;
     }
-    /* Botão para mostrar/esconder formulário */
     #btnMostrarForm {
       margin-bottom: 1rem;
       padding: 10px 15px;
@@ -136,22 +135,18 @@
 <body>
   <h1>Controle de Estoque</h1>
 
-  <!-- Botão para mostrar/ocultar o formulário de inserção -->
   <button id="btnMostrarForm">Inserir Novo Item</button>
 
-  <!-- CONSULTA DE SALDO -->
   <div class="consulta-container">
     <input type="text" id="consultaCodigo" placeholder="Digite o código do produto" />
     <button onclick="consultarSaldo()">Consultar Saldo</button>
   </div>
 
-  <!-- RESULTADO DO SALDO -->
   <div id="resultadoSaldo" class="saldo-box">
     <span class="saldo-icon">📦</span>
     <span id="textoSaldo">Saldo: 0</span>
   </div>
 
-  <!-- FORMULÁRIO (oculto inicialmente) -->
   <form id="formProduto" style="display:none;" onsubmit="event.preventDefault(); adicionarProduto();">
     <input type="text" id="codigo" placeholder="Código" required />
     <input type="text" id="descricao" placeholder="Descrição" required />
@@ -167,7 +162,6 @@
     <button type="submit">Adicionar Produto</button>
   </form>
 
-  <!-- TABELA -->
   <table>
     <thead>
       <tr>
@@ -182,23 +176,20 @@
         <th>Ações</th>
       </tr>
     </thead>
-    <tbody id="tabela-dados">
-      <!-- Dados serão carregados aqui -->
-    </tbody>
+    <tbody id="tabela-dados"></tbody>
   </table>
 
-  <!-- SCRIPT -->
   <script>
-    const supabaseUrl = 'https://msctrhembaolsklvibzb.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = window.supabase.createClient(
+      'https://msctrhembaolsklvibzb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zY3RyaGVtYmFvbHNrbHZpYnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MDM3NDYsImV4cCI6MjA2MzI3OTc0Nn0.7deozexjvrqmsAZzeRd5gguoZG4g-Yi3LoYlRjMBm1U'
+    );
 
     const btnMostrarForm = document.getElementById('btnMostrarForm');
     const formProduto = document.getElementById('formProduto');
 
-    // Toggle mostrar/ocultar formulário
     btnMostrarForm.addEventListener('click', () => {
-      if(formProduto.style.display === 'none') {
+      if (formProduto.style.display === 'none') {
         formProduto.style.display = 'grid';
         btnMostrarForm.textContent = 'Ocultar Formulário';
       } else {
@@ -213,7 +204,6 @@
       tabela.innerHTML = '';
 
       if (error) {
-        tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
         console.error(error);
         return;
       }
@@ -239,88 +229,82 @@
     }
 
     async function adicionarProduto() {
-      const codigo = document.getElementById('codigo').value.trim();
-      const descricao = document.getElementById('descricao').value.trim();
-      const endereco = document.getElementById('endereco').value.trim();
-      const lote = document.getElementById('lote').value.trim();
-      const tipo = document.getElementById('tipo').value;
-      const data = document.getElementById('data').value;
-      const quantidade = parseInt(document.getElementById('quantidade').value);
+      const novoItem = {
+        codigo: document.getElementById('codigo').value.trim(),
+        descricao: document.getElementById('descricao').value.trim(),
+        endereco: document.getElementById('endereco').value.trim(),
+        lote: document.getElementById('lote').value.trim(),
+        tipo: document.getElementById('tipo').value,
+        data: document.getElementById('data').value,
+        quantidade: parseInt(document.getElementById('quantidade').value),
+      };
 
-      if (!codigo || !descricao || !endereco || !lote || !tipo || !data || isNaN(quantidade)) {
+      if (Object.values(novoItem).some(v => v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)))) {
         alert('Preencha todos os campos corretamente.');
         return;
       }
 
-      const { error } = await supabase.from('estoque').insert([{ codigo, descricao, endereco, lote, tipo, data, quantidade }]);
-
+      const { error } = await supabase.from('estoque').insert(novoItem);
       if (error) {
         alert('Erro ao adicionar produto.');
         console.error(error);
-      } else {
-        alert('Produto adicionado com sucesso!');
-        document.querySelector('form').reset();
-        formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
-        carregarDados();
+        return;
       }
+
+      formProduto.reset();
+      carregarDados();
+      formProduto.style.display = 'none';
+      btnMostrarForm.textContent = 'Inserir Novo Item';
     }
 
     async function excluir(id) {
-      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-      const { error } = await supabase.from('estoque').delete().eq('id', id);
-      if (error) {
-        alert('Erro ao excluir');
-        console.error(error);
-      } else {
+      if (confirm('Tem certeza que deseja excluir este item?')) {
+        const { error } = await supabase.from('estoque').delete().eq('id', id);
+        if (error) {
+          alert('Erro ao excluir item.');
+          console.error(error);
+          return;
+        }
         carregarDados();
       }
     }
 
-    // Função para consultar saldo de um código
+    function editar(id) {
+      alert('Função de edição pode ser implementada aqui com um modal ou inputs inline.');
+    }
+
     async function consultarSaldo() {
-      const codigoConsulta = document.getElementById('consultaCodigo').value.trim();
-      if (!codigoConsulta) {
-        alert('Digite o código do produto para consulta.');
+      const codigo = document.getElementById('consultaCodigo').value.trim();
+      const resultadoBox = document.getElementById('resultadoSaldo');
+      const textoSaldo = document.getElementById('textoSaldo');
+
+      if (!codigo) {
+        alert('Digite o código do produto.');
         return;
       }
 
-      // Buscar todas movimentações do código informado
-      const { data, error } = await supabase.from('estoque').select('tipo, quantidade').eq('codigo', codigoConsulta);
+      const { data, error } = await supabase
+        .from('estoque')
+        .select('tipo, quantidade')
+        .eq('codigo', codigo);
+
       if (error) {
-        alert('Erro ao consultar saldo.');
+        alert('Erro na consulta.');
         console.error(error);
         return;
       }
-      if (!data || data.length === 0) {
-        alert('Nenhuma movimentação encontrada para este código.');
-        return;
-      }
 
-      // Calcular saldo: soma entradas - soma saídas
       let saldo = 0;
       data.forEach(item => {
-        if (item.tipo.toLowerCase() === 'entrada') {
-          saldo += item.quantidade;
-        } else if (item.tipo.toLowerCase() === 'saída' || item.tipo.toLowerCase() === 'saida') {
-          saldo -= item.quantidade;
-        }
+        if (item.tipo === 'Entrada') saldo += item.quantidade;
+        if (item.tipo === 'Saída') saldo -= item.quantidade;
       });
 
-      // Mostrar resultado
-      const resultado = document.getElementById('resultadoSaldo');
-      const textoSaldo = document.getElementById('textoSaldo');
-      textoSaldo.textContent = `Saldo para código ${codigoConsulta}: ${saldo}`;
-      resultado.style.display = 'flex';
+      textoSaldo.textContent = `Saldo: ${saldo}`;
+      resultadoBox.style.display = 'flex';
     }
 
-    // Função para editar (apenas placeholder, pode implementar depois)
-    function editar(id) {
-      alert('Função de editar não implementada ainda.');
-    }
-
-    // Carregar dados ao abrir a página
-    window.onload = carregarDados;
+    carregarDados();
   </script>
 </body>
 </html>
