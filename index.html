@@ -201,13 +201,8 @@
     const formProduto = document.getElementById('formProduto');
 
     btnMostrarForm.addEventListener('click', () => {
-      if (formProduto.style.display === 'none') {
-        formProduto.style.display = 'grid';
-        btnMostrarForm.textContent = 'Ocultar Formulário';
-      } else {
-        formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
-      }
+      formProduto.style.display = formProduto.style.display === 'none' ? 'grid' : 'none';
+      btnMostrarForm.textContent = formProduto.style.display === 'none' ? 'Inserir Novo Item' : 'Ocultar Formulário';
     });
 
     const btnToggleConsulta = document.getElementById('btnToggleConsulta');
@@ -215,14 +210,10 @@
     const resultadoSaldo = document.getElementById('resultadoSaldo');
 
     btnToggleConsulta.addEventListener('click', () => {
-      if (consultaContainer.style.display !== 'none') {
-        consultaContainer.style.display = 'none';
-        resultadoSaldo.style.display = 'none'; // também esconde resultado se visível
-        btnToggleConsulta.textContent = 'Mostrar Consulta de Saldo';
-      } else {
-        consultaContainer.style.display = 'flex';
-        btnToggleConsulta.textContent = 'Ocultar Consulta de Saldo';
-      }
+      const visivel = consultaContainer.style.display !== 'none';
+      consultaContainer.style.display = visivel ? 'none' : 'flex';
+      resultadoSaldo.style.display = 'none';
+      btnToggleConsulta.textContent = visivel ? 'Mostrar Consulta de Saldo' : 'Ocultar Consulta de Saldo';
     });
 
     async function carregarDados() {
@@ -257,9 +248,8 @@
     }
 
     async function salvarProduto() {
-      const id = document.getElementById('editandoId').value;
       const codigo = document.getElementById('codigo').value.trim();
-      const descricao = document.getElementById('descricao').value.trim();
+      let descricao = document.getElementById('descricao').value.trim();
       const endereco = document.getElementById('endereco').value.trim();
       const lote = document.getElementById('lote').value.trim();
       const tipo = document.getElementById('tipo').value;
@@ -271,113 +261,35 @@
         return;
       }
 
-      if (id) {
-        // Atualizar
-        const { error } = await supabase
-          .from('estoque')
-          .update({ codigo, descricao, endereco, lote, tipo, data, quantidade })
-          .eq('id', id);
-
-        if (error) {
-          alert('Erro ao atualizar produto.');
-          console.error(error);
-          return;
-        }
-      } else {
-        // Inserir
-        const { error } = await supabase
-          .from('estoque')
-          .insert({ codigo, descricao, endereco, lote, tipo, data, quantidade });
-
-        if (error) {
-          alert('Erro ao inserir produto.');
-          console.error(error);
-          return;
-        }
-      }
-
-      limparFormulario();
-      carregarDados();
-      formProduto.style.display = 'none';
-      btnMostrarForm.textContent = 'Inserir Novo Item';
-    }
-
-    function limparFormulario() {
-      document.getElementById('editandoId').value = '';
-      document.getElementById('codigo').value = '';
-      document.getElementById('descricao').value = '';
-      document.getElementById('endereco').value = '';
-      document.getElementById('lote').value = '';
-      document.getElementById('tipo').value = '';
-      document.getElementById('data').value = '';
-      document.getElementById('quantidade').value = '';
-    }
-
-    async function editar(id) {
-      const { data, error } = await supabase.from('estoque').select('*').eq('id', id).single();
-      if (error) {
-        alert('Erro ao buscar produto para editar.');
-        console.error(error);
-        return;
-      }
-
-      document.getElementById('editandoId').value = data.id;
-      document.getElementById('codigo').value = data.codigo;
-      document.getElementById('descricao').value = data.descricao;
-      document.getElementById('endereco').value = data.endereco;
-      document.getElementById('lote').value = data.lote;
-      document.getElementById('tipo').value = data.tipo;
-      document.getElementById('data').value = data.data.slice(0, 16);
-      document.getElementById('quantidade').value = data.quantidade;
-
-      formProduto.style.display = 'grid';
-      btnMostrarForm.textContent = 'Ocultar Formulário';
-    }
-
-    async function excluir(id) {
-      if (!confirm('Deseja realmente excluir este registro?')) return;
-      const { error } = await supabase.from('estoque').delete().eq('id', id);
-      if (error) {
-        alert('Erro ao excluir registro.');
-        console.error(error);
-        return;
-      }
-      carregarDados();
-    }
-
-    async function consultarSaldo() {
-      const codigo = document.getElementById('consultaCodigo').value.trim();
-      if (!codigo) {
-        alert('Informe o código do produto para consultar.');
-        return;
-      }
-
-      const { data, error } = await supabase
+      const { data: existentes, error: erroBusca } = await supabase
         .from('estoque')
-        .select('quantidade, tipo')
-        .eq('codigo', codigo);
+        .select('descricao')
+        .eq('codigo', codigo)
+        .order('id', { ascending: true });
+
+      if (erroBusca) {
+        alert('Erro ao verificar código existente.');
+        return;
+      }
+
+      if (existentes.length > 0) {
+        descricao = existentes[0].descricao;
+      }
+
+      const { error } = await supabase.from('estoque').insert([
+        { codigo, descricao, endereco, lote, tipo, data, quantidade }
+      ]);
 
       if (error) {
-        alert('Erro ao consultar saldo.');
+        alert('Erro ao salvar.');
         console.error(error);
-        return;
+      } else {
+        alert('Produto salvo com sucesso.');
+        formProduto.reset();
+        formProduto.style.display = 'none';
+        btnMostrarForm.textContent = 'Inserir Novo Item';
+        carregarDados();
       }
-
-      if (data.length === 0) {
-        alert('Produto não encontrado.');
-        return;
-      }
-
-      // Calcular saldo: somar entradas e subtrair saídas
-      let saldo = 0;
-      data.forEach(item => {
-        if (item.tipo.toLowerCase() === 'entrada') saldo += item.quantidade;
-        else if (item.tipo.toLowerCase() === 'saída' || item.tipo.toLowerCase() === 'saida') saldo -= item.quantidade;
-      });
-
-      const textoSaldo = document.getElementById('textoSaldo');
-      textoSaldo.textContent = `Saldo do produto ${codigo}: ${saldo}`;
-      resultadoSaldo.style.display = 'flex';
     }
 
     carregarDados();
