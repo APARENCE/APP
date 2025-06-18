@@ -3,193 +3,647 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Estoque</title>
+  <title>Controle de Estoque - Sistema Moderno</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card-background: rgba(255, 255, 255, 0.95);
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --border-color: rgba(255, 255, 255, 0.2);
+      --shadow-light: 0 10px 25px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 20px 40px rgba(0, 0, 0, 0.15);
+      --shadow-heavy: 0 30px 60px rgba(0, 0, 0, 0.2);
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      min-height: 100vh;
       padding: 2rem;
-      color: #333;
+      color: var(--text-primary);
+      position: relative;
+      overflow-x: hidden;
     }
-    h1 {
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
       text-align: center;
-      margin-bottom: 1rem;
+      margin-bottom: 3rem;
+      animation: fadeInDown 0.8s ease-out;
     }
-    form {
-      background-color: #fff;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+
+    .header h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 300;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
       margin-bottom: 2rem;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      color: white;
+      box-shadow: var(--shadow-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+    }
+
+    .btn-secondary {
+      background: var(--secondary-gradient);
+    }
+
+    .btn-success {
+      background: var(--success-gradient);
+    }
+
+    .card {
+      background: var(--card-background);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: var(--shadow-light);
+      margin-bottom: 2rem;
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .consulta-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 1rem 1rem 1rem 3rem;
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 16px;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+      transform: scale(1.02);
+    }
+
+    .input-group i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #667eea;
+      font-size: 1.1rem;
+    }
+
+    .saldo-box {
+      display: none;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%);
+      border: 2px solid rgba(67, 233, 123, 0.3);
+      border-radius: 20px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2d3748;
+      backdrop-filter: blur(10px);
+      animation: bounceIn 0.6s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .saldo-box::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    .saldo-icon {
+      margin-right: 0.75rem;
+      font-size: 1.5rem;
+      background: var(--warning-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .form-container {
+      display: none;
+      animation: slideInUp 0.5s ease-out;
+    }
+
+    .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
-    form input, form select {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+
+    .form-group {
+      position: relative;
     }
-    form button {
-      grid-column: span 2;
-      padding: 10px;
-      background-color: #2563eb;
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 12px;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+      transform: scale(1.02);
+    }
+
+    .btn-submit {
+      grid-column: 1 / -1;
+      padding: 1.2rem 2rem;
+      background: var(--success-gradient);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-light);
+      position: relative;
+      overflow: hidden;
     }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .table-container {
+      background: var(--card-background);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-light);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      animation: fadeInUp 0.8s ease-out 0.6s both;
+      position: relative;
+    }
+
+    .table-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
+
     th {
-      background-color: #2563eb;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      padding: 1.5rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
     }
-    tr:hover {
-      background-color: #f1f5f9;
+
+    td {
+      padding: 1.2rem 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      font-weight: 500;
     }
-    .edit-btn {
-      background-color: #10b981;
+
+    tr:hover td {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+      transform: scale(1.01);
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-edit {
+      background: var(--warning-gradient);
       color: white;
       border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 5px;
-    }
-    .delete-btn {
-      background-color: #ef4444;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .consulta-container {
-      margin-bottom: 1.5rem;
-      background-color: #fff;
-      padding: 1rem;
+      padding: 0.5rem 1rem;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
-      gap: 10px;
-      max-width: 400px;
+      gap: 0.3rem;
     }
-    .consulta-container input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    .consulta-container button {
-      padding: 8px 12px;
-      background-color: #2563eb;
+
+    .btn-delete {
+      background: var(--danger-gradient);
       color: white;
       border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .saldo-box {
-      display: none;
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background-color: #e0f2fe;
-      border: 2px solid #38bdf8;
+      padding: 0.5rem 1rem;
       border-radius: 8px;
-      font-size: 1.1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
-      gap: 10px;
-      max-width: 400px;
+      gap: 0.3rem;
     }
-    .saldo-icon {
-      color: #0ea5e9;
-      font-size: 1.5rem;
+
+    .btn-edit:hover,
+    .btn-delete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     }
-    #btnMostrarForm {
-      margin-bottom: 1rem;
-      padding: 10px 15px;
-      background-color: #2563eb;
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+      }
+      100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+
+      .consulta-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      th, td {
+        padding: 0.8rem 0.5rem;
+      }
+
+      .action-btns {
+        flex-direction: column;
+      }
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
       color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      max-width: 400px;
-      display: block;
+      font-weight: 600;
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      box-shadow: var(--shadow-medium);
     }
-    #btnToggleConsulta {
-      margin-bottom: 1rem;
-      padding: 10px 15px;
-      background-color: #6b7280;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      max-width: 400px;
-      display: block;
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success-gradient);
+    }
+
+    .notification.error {
+      background: var(--danger-gradient);
     }
   </style>
 </head>
 <body>
-  <h1>Controle de Estoque</h1>
-  <button id="btnMostrarForm">Inserir Novo Item</button>
-  <button id="btnToggleConsulta">Ocultar Consulta de Saldo</button>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-boxes"></i> Controle de Estoque</h1>
+      <p>Sistema moderno de gestão e controle de inventário</p>
+    </div>
 
-  <div class="consulta-container" id="consultaContainer">
-    <input type="text" id="consultaCodigo" placeholder="Digite o código do produto" />
-    <button onclick="consultarSaldo()">Consultar Saldo</button>
+    <div class="action-buttons">
+      <button id="btnMostrarForm" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        Inserir Novo Item
+      </button>
+      <button id="btnToggleConsulta" class="btn btn-secondary">
+        <i class="fas fa-eye-slash"></i>
+        Ocultar Consulta de Saldo
+      </button>
+    </div>
+
+    <div class="card" id="consultaContainer">
+      <div class="consulta-container">
+        <div class="input-group">
+          <i class="fas fa-search"></i>
+          <input type="text" id="consultaCodigo" placeholder="Digite o código do produto para consultar o saldo" />
+        </div>
+        <button onclick="consultarSaldo()" class="btn btn-success">
+          <i class="fas fa-calculator"></i>
+          Consultar Saldo
+        </button>
+      </div>
+
+      <div id="resultadoSaldo" class="saldo-box">
+        <span class="saldo-icon"><i class="fas fa-cube"></i></span>
+        <span id="textoSaldo">Saldo: 0</span>
+      </div>
+    </div>
+
+    <div class="card form-container" id="formProduto">
+      <h3 style="margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 600;">
+        <i class="fas fa-edit"></i> Formulário de Produto
+      </h3>
+      <form onsubmit="event.preventDefault(); salvarProduto();">
+        <input type="hidden" id="editandoId" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="codigo"><i class="fas fa-barcode"></i> Código</label>
+            <input type="text" id="codigo" placeholder="Código do produto" required />
+          </div>
+          <div class="form-group">
+            <label for="descricao"><i class="fas fa-tag"></i> Descrição</label>
+            <input type="text" id="descricao" placeholder="Descrição do produto" required />
+          </div>
+          <div class="form-group">
+            <label for="endereco"><i class="fas fa-map-marker-alt"></i> Endereço</label>
+            <input type="text" id="endereco" placeholder="Localização no estoque" required />
+          </div>
+          <div class="form-group">
+            <label for="lote"><i class="fas fa-layer-group"></i> Lote</label>
+            <input type="text" id="lote" placeholder="Número do lote" required />
+          </div>
+          <div class="form-group">
+            <label for="tipo"><i class="fas fa-exchange-alt"></i> Tipo</label>
+            <select id="tipo" required>
+              <option value="">Selecione o tipo</option>
+              <option value="Entrada">📥 Entrada</option>
+              <option value="Saída">📤 Saída</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="data"><i class="fas fa-calendar-alt"></i> Data</label>
+            <input type="datetime-local" id="data" required />
+          </div>
+          <div class="form-group">
+            <label for="quantidade"><i class="fas fa-calculator"></i> Quantidade</label>
+            <input type="number" id="quantidade" placeholder="Quantidade" required />
+          </div>
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-save"></i>
+            Salvar Produto
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fas fa-hashtag"></i> ID</th>
+            <th><i class="fas fa-barcode"></i> Código</th>
+            <th><i class="fas fa-tag"></i> Descrição</th>
+            <th><i class="fas fa-map-marker-alt"></i> Endereço</th>
+            <th><i class="fas fa-layer-group"></i> Lote</th>
+            <th><i class="fas fa-exchange-alt"></i> Tipo</th>
+            <th><i class="fas fa-calendar-alt"></i> Data</th>
+            <th><i class="fas fa-calculator"></i> Quantidade</th>
+            <th><i class="fas fa-cogs"></i> Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-dados"></tbody>
+      </table>
+    </div>
   </div>
-
-  <div id="resultadoSaldo" class="saldo-box">
-    <span class="saldo-icon">📦</span>
-    <span id="textoSaldo">Saldo: 0</span>
-  </div>
-
-  <form id="formProduto" style="display:none;" onsubmit="event.preventDefault(); salvarProduto();">
-    <input type="hidden" id="editandoId" />
-    <input type="text" id="codigo" placeholder="Código" required />
-    <input type="text" id="descricao" placeholder="Descrição" required />
-    <input type="text" id="endereco" placeholder="Endereço" required />
-    <input type="text" id="lote" placeholder="Lote" required />
-    <select id="tipo" required>
-      <option value="">Tipo</option>
-      <option value="Entrada">Entrada</option>
-      <option value="Saída">Saída</option>
-    </select>
-    <input type="datetime-local" id="data" required />
-    <input type="number" id="quantidade" placeholder="Quantidade" required />
-    <button type="submit">Salvar Produto</button>
-  </form>
-
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Código</th>
-        <th>Descrição</th>
-        <th>Endereço</th>
-        <th>Lote</th>
-        <th>Tipo</th>
-        <th>Data</th>
-        <th>Quantidade</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabela-dados"></tbody>
-  </table>
 
   <script>
     const supabase = window.supabase.createClient(
@@ -202,11 +656,11 @@
 
     btnMostrarForm.addEventListener('click', () => {
       if (formProduto.style.display === 'none' || formProduto.style.display === '') {
-        formProduto.style.display = 'grid';
-        btnMostrarForm.textContent = 'Ocultar Formulário';
+        formProduto.style.display = 'block';
+        btnMostrarForm.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar Formulário';
       } else {
         formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
+        btnMostrarForm.innerHTML = '<i class="fas fa-plus"></i> Inserir Novo Item';
       }
     });
 
@@ -218,12 +672,25 @@
       if (consultaContainer.style.display !== 'none') {
         consultaContainer.style.display = 'none';
         resultadoSaldo.style.display = 'none';
-        btnToggleConsulta.textContent = 'Mostrar Consulta de Saldo';
+        btnToggleConsulta.innerHTML = '<i class="fas fa-eye"></i> Mostrar Consulta de Saldo';
       } else {
-        consultaContainer.style.display = 'flex';
-        btnToggleConsulta.textContent = 'Ocultar Consulta de Saldo';
+        consultaContainer.style.display = 'block';
+        btnToggleConsulta.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar Consulta de Saldo';
       }
     });
+
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.classList.add('show'), 100);
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => document.body.removeChild(notification), 300);
+      }, 3000);
+    }
 
     async function carregarDados() {
       const { data, error } = await supabase.from('estoque').select('*').order('id', { ascending: true });
@@ -231,25 +698,39 @@
       tabela.innerHTML = '';
 
       if (error) {
-        tabela.innerHTML = `<tr><td colspan="9">Erro ao carregar dados.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 2rem;"><i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados.</td></tr>`;
         console.error(error);
+        return;
+      }
+
+      if (data.length === 0) {
+        tabela.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #718096; padding: 2rem;"><i class="fas fa-inbox"></i> Nenhum produto cadastrado ainda.</td></tr>`;
         return;
       }
 
       data.forEach(item => {
         const row = document.createElement('tr');
+        const tipoIcon = item.tipo === 'Entrada' ? '📥' : '📤';
+        const tipoClass = item.tipo === 'Entrada' ? 'success' : 'warning';
+        
         row.innerHTML = `
-          <td>${item.id}</td>
-          <td>${item.codigo}</td>
+          <td><strong>#${item.id}</strong></td>
+          <td><code>${item.codigo}</code></td>
           <td>${item.descricao}</td>
-          <td>${item.endereco}</td>
-          <td>${item.lote}</td>
-          <td>${item.tipo}</td>
-          <td>${new Date(item.data).toLocaleString()}</td>
-          <td>${item.quantidade}</td>
+          <td><i class="fas fa-map-marker-alt"></i> ${item.endereco}</td>
+          <td><span style="background: rgba(102, 126, 234, 0.1); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.9rem;">${item.lote}</span></td>
+          <td><span style="background: var(--${tipoClass}-gradient); color: white; padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">${tipoIcon} ${item.tipo}</span></td>
+          <td><i class="fas fa-calendar"></i> ${new Date(item.data).toLocaleString('pt-BR')}</td>
+          <td><strong>${item.quantidade}</strong></td>
           <td>
-            <button class="edit-btn" onclick="editar(${item.id})">Editar</button>
-            <button class="delete-btn" onclick="excluir(${item.id})">Excluir</button>
+            <div class="action-btns">
+              <button class="btn-edit" onclick="editar(${item.id})">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button class="btn-delete" onclick="excluir(${item.id})">
+                <i class="fas fa-trash"></i> Excluir
+              </button>
+            </div>
           </td>
         `;
         tabela.appendChild(row);
@@ -267,7 +748,7 @@
       const quantidade = Number(document.getElementById('quantidade').value);
 
       if (!codigo || !descricao || !endereco || !lote || !tipo || !data || !quantidade) {
-        alert('Preencha todos os campos corretamente.');
+        showNotification('Preencha todos os campos corretamente.', 'error');
         return;
       }
 
@@ -279,16 +760,16 @@
           .eq('id', id);
 
         if (error) {
-          alert('Erro ao atualizar produto.');
+          showNotification('Erro ao atualizar produto.', 'error');
           console.error(error);
           return;
         } else {
-          alert('Produto atualizado com sucesso.');
+          showNotification('Produto atualizado com sucesso!', 'success');
         }
         document.getElementById('editandoId').value = '';
         formProduto.reset();
         formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
+        btnMostrarForm.innerHTML = '<i class="fas fa-plus"></i> Inserir Novo Item';
         carregarDados();
       } else {
         // Se for inserção, verifica se o código já existe para manter a descrição original
@@ -299,7 +780,7 @@
           .order('id', { ascending: true });
 
         if (erroBusca) {
-          alert('Erro ao verificar código existente.');
+          showNotification('Erro ao verificar código existente.', 'error');
           console.error(erroBusca);
           return;
         }
@@ -313,14 +794,14 @@
         ]);
 
         if (error) {
-          alert('Erro ao salvar produto.');
+          showNotification('Erro ao salvar produto.', 'error');
           console.error(error);
         } else {
-          alert('Produto salvo com sucesso.');
+          showNotification('Produto salvo com sucesso!', 'success');
         }
         formProduto.reset();
         formProduto.style.display = 'none';
-        btnMostrarForm.textContent = 'Inserir Novo Item';
+        btnMostrarForm.innerHTML = '<i class="fas fa-plus"></i> Inserir Novo Item';
         carregarDados();
       }
     }
@@ -328,7 +809,7 @@
     async function editar(id) {
       const { data, error } = await supabase.from('estoque').select('*').eq('id', id).single();
       if (error) {
-        alert('Erro ao buscar produto para editar.');
+        showNotification('Erro ao buscar produto para editar.', 'error');
         console.error(error);
         return;
       }
@@ -342,25 +823,31 @@
       document.getElementById('data').value = data.data.slice(0, 16);
       document.getElementById('quantidade').value = data.quantidade;
 
-      formProduto.style.display = 'grid';
-      btnMostrarForm.textContent = 'Ocultar Formulário';
+      formProduto.style.display = 'block';
+      btnMostrarForm.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar Formulário';
+      
+      // Scroll to form
+      formProduto.scrollIntoView({ behavior: 'smooth' });
     }
 
     async function excluir(id) {
-      if (!confirm('Deseja realmente excluir este registro?')) return;
+      if (!confirm('⚠️ Deseja realmente excluir este registro? Esta ação não pode ser desfeita.')) return;
+      
       const { error } = await supabase.from('estoque').delete().eq('id', id);
       if (error) {
-        alert('Erro ao excluir registro.');
+        showNotification('Erro ao excluir registro.', 'error');
         console.error(error);
         return;
       }
+      
+      showNotification('Registro excluído com sucesso!', 'success');
       carregarDados();
     }
 
     async function consultarSaldo() {
       const codigo = document.getElementById('consultaCodigo').value.trim();
       if (!codigo) {
-        alert('Informe o código do produto para consultar.');
+        showNotification('Informe o código do produto para consultar.', 'error');
         return;
       }
 
@@ -370,13 +857,13 @@
         .eq('codigo', codigo);
 
       if (error) {
-        alert('Erro ao consultar saldo.');
+        showNotification('Erro ao consultar saldo.', 'error');
         console.error(error);
         return;
       }
 
       if (data.length === 0) {
-        alert('Produto não encontrado.');
+        showNotification('Produto não encontrado.', 'error');
         return;
       }
 
@@ -389,10 +876,26 @@
           saldo -= item.quantidade;
       });
 
-      document.getElementById('textoSaldo').textContent = `Saldo do produto ${codigo}: ${saldo}`;
+      const saldoColor = saldo >= 0 ? '#43e97b' : '#fa709a';
+      const saldoIcon = saldo >= 0 ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+      
+      document.getElementById('textoSaldo').innerHTML = `
+        <i class="${saldoIcon}" style="color: ${saldoColor}; margin-right: 0.5rem;"></i>
+        Saldo do produto <strong>${codigo}</strong>: <span style="color: ${saldoColor}; font-weight: 700;">${saldo}</span>
+      `;
       resultadoSaldo.style.display = 'flex';
+      
+      showNotification(`Saldo consultado: ${saldo} unidades`, 'success');
     }
 
+    // Enter key support for search
+    document.getElementById('consultaCodigo').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        consultarSaldo();
+      }
+    });
+
+    // Initialize the application
     carregarDados();
   </script>
 </body>
